@@ -22,7 +22,6 @@ class Controller {
 
       auto list = new tsl::elm::List();
 
-      // throws std::filesystem::filesystem_error
       for (auto& node: std::filesystem::directory_iterator(this->getGamePath())) {
         if (node.is_directory()) {
           list->addItem(new tsl::elm::ListItem(node.path().filename().string()));
@@ -42,11 +41,13 @@ class Controller {
         Result result;
         result = fsInitialize();
         if (R_FAILED(result)) {
-            // Throw error
+          std::error_code ec(static_cast<int>(result), std::generic_category());
+          throw std::filesystem::filesystem_error("Failed to initialize fs", std::filesystem::path(), ec);
         }
         result = fsdevMountSdmc();
         if (R_FAILED(result)) {
-            // Throw error
+          std::error_code ec(static_cast<int>(result), std::generic_category());
+          throw std::filesystem::filesystem_error("Failed to mount sdmc", std::filesystem::path(), ec);
         }
     }
 
@@ -57,6 +58,5 @@ class Controller {
       if (std::filesystem::exists(path)) {
         return path;
       }
-      // throws std::filesystem::filesystem_erro
     }
 };
