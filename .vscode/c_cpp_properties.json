@@ -28,10 +28,12 @@
                 "/opt/devkitpro/devkitA64/lib/gcc/aarch64-none-elf/8.3.0/include/**",
                 "/opt/devkitpro/libnx/include/**",
                 "/opt/devkitpro/portlibs/switch/include/**",
-                "/opt/devkitpro/portlibs/switch/include/**",
                 "/opt/devkitpro/portlibs/switch/include/freetype2/**",
                 "${workspaceFolder}/include/**",
-                "${workspaceFolder}/libs/libtesla/include/**"
+                "${workspaceFolder}/libs/libtesla/include/**",
+                "/opt/devkitpro/libnx/include/switch/services",
+                "/opt/devkitpro/libnx/include/switch/runtime/devices",
+                "${workspaceFolder}/libs/atmosphere-libs/libstratosphere/source/dmnt"
             ],
             "defines": [
                 "SWITCH",
@@ -40,7 +42,7 @@
             ],
             "compilerPath": "/opt/devkitpro/devkitA64/bin/aarch64-none-elf-g++",
             "cStandard": "c11",
-            "cppStandard": "c++17",
+            "cppStandard": "c++23",
             "intelliSenseMode": "gcc-x64"
         }
     ],

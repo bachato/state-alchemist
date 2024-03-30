@@ -1,5 +1,8 @@
 #include <tesla.hpp>    // The Tesla Header
 
+#include <dmntcht.h>
+#include "../controller.hpp"
+
 class GuiGroups : public tsl::Gui {
   public:
     GuiGroups() { }
@@ -12,13 +15,19 @@ class GuiGroups : public tsl::Gui {
         auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
         // NAVIGATE TO GAME'S CURRENT DIRECTORY
+        DmntCheatProcessMetadata metadata;
+        dmntchtGetCheatProcessMetadata(&metadata);
+        Controller controller = Controller(metadata.title_id);
+
 
         // IF GAME FOLDER NOT FOUND
-        auto message = new tsl::elm::CategoryHeader("Game folder not found for ID: GAME_ID. Are mods set up for this game?");
-        frame->setContent(message);
-        return frame;
+        //auto message = new tsl::elm::CategoryHeader("Game folder not found for ID: GAME_ID. Are mods set up for this game?");
+        //frame->setContent(message);
+        //return frame;
 
         // ITERATE OVER FOLDER NAMES, CREATING LIST FROM THEM
+        auto list = controller.loadGroups();
+        frame->setContent(list);
 
         // A list that can contain sub elements and handles scrolling
         /*auto list = new tsl::elm::List();
