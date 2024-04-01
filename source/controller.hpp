@@ -31,6 +31,20 @@ class Controller {
       return groups;
     }
 
+    std::vector<std::string> loadSources(std::string group) {
+      this->openSdCardIfNeeded();
+
+      std::vector<std::string> sources;
+
+      for (auto& node: std::filesystem::directory_iterator(this->getGroupPath(group))) {
+        if (node.is_directory()) {
+          sources.push_back(node.path().filename().string());
+        }
+      }
+
+      return sources;
+    }
+
   private:
     void openSdCardIfNeeded() {
         if (this->isSdCardOpen) {
@@ -58,5 +72,12 @@ class Controller {
       if (std::filesystem::exists(path)) {
         return path;
       }
+      std::error_code ec = std::make_error_code(std::errc::no_such_file_or_directory);
+      throw std::filesystem::filesystem_error("Game Folder not found", GAME_FOLDER_PATH, ec);
+    }
+
+    std::string getGroupPath(std::string group) {
+      this->openSdCardIfNeeded();
+      return this->getGamePath() + "/" + group;
     }
 };
