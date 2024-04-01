@@ -1,5 +1,6 @@
 #define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
 #include <tesla.hpp>    // The Tesla Header
+#include <fs_dev.h>
 
 #include "ui/ui_groups.hpp" // Include the header file for GuiGroups
 
@@ -53,7 +54,9 @@ public:
     virtual void exitServices() override {}  // Callet at the end to clean up all services previously initialized
 
     virtual void onShow() override {}    // Called before overlay wants to change from invisible to visible state
-    virtual void onHide() override {}    // Called before overlay wants to change from visible to invisible state
+    virtual void onHide() override {
+        fsdevUnmountDevice("sdmc");
+    }    // Called before overlay wants to change from visible to invisible state
 
     virtual std::unique_ptr<tsl::Gui> loadInitialGui() override {
         return initially<GuiMain>();  // Initial Gui to load. It's possible to pass arguments to it's constructor like this

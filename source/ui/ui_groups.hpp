@@ -20,8 +20,24 @@ class GuiGroups : public tsl::Gui {
           dmntchtGetCheatProcessMetadata(&metadata);
           Controller controller = Controller(metadata.title_id);
 
-          auto list = controller.loadGroups();
-          frame->setContent(list);
+          auto groupList = new tsl::elm::List();
+
+          std::vector<std::string> groups = controller.loadGroups();
+          for (const std::string group : groups) {
+            auto item = new tsl::elm::ListItem(group);
+
+            item->setClickListener([&](u64 keys) {
+              if (keys & HidNpadButton_A) {
+                tsl::changeTo<GuiSources>(group);
+                return true;
+              }
+              return false;
+            });
+
+            groupList->addItem(item);
+          }
+
+          frame->setContent(groupList);
           return frame;
         } catch (std::filesystem::filesystem_error &e) {
           tsl::changeTo<GuiError>(std::string("Filesystem error: ") + e.what());

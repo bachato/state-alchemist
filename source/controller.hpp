@@ -17,18 +17,18 @@ class Controller {
       this->titleId = titleId;
     }
 
-    tsl::elm::List* loadGroups() {
+    std::vector<std::string> loadGroups() {
       this->openSdCardIfNeeded();
 
-      auto list = new tsl::elm::List();
+      std::vector<std::string> groups;
 
       for (auto& node: std::filesystem::directory_iterator(this->getGamePath())) {
         if (node.is_directory()) {
-          list->addItem(new tsl::elm::ListItem(node.path().filename().string()));
+          groups.push_back(node.path().filename().string());
         }
       }
 
-      return list;
+      return groups;
     }
 
   private:
