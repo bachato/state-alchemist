@@ -24,7 +24,7 @@ class GuiMods : public tsl::Gui {
 
         try {
           std::vector<std::string> mods = controller.loadMods(this->source, this->group);
-          std::string activeMod = controller.getActiveMod(this->source, this->group);
+          std::string_view activeMod = controller.getActiveMod(this->source, this->group);
 
           auto list = new tsl::elm::List();
 

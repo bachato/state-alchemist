@@ -45,7 +45,8 @@ class Controller {
       std::vector<std::string> sources;
 
       // Each folder within the group's folder is an option for a moddable source
-      for (auto& node: std::filesystem::directory_iterator(this->getGroupPath(group))) {
+      for (auto& node: std::filesystem::directory_iterator(this->getGroupPath(std::move(group)))) {
+        // "group" has been moved now. "group" may be empty.
         if (node.is_directory()) {
           sources.push_back(node.path().filename().string());
         }
@@ -63,7 +64,8 @@ class Controller {
       std::vector<std::string> mods;
 
       // Each folder within the moddable source's folder is a toggable mod
-      for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(group, source))) {
+      for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(std::move(group), std::move(source)))) {
+        // "group" and "source" have been moved now. "group" and "source" may be empty.
         if (node.is_directory()) {
           mods.push_back(node.path().filename().string());
         }
@@ -81,13 +83,14 @@ class Controller {
       this->openSdCardIfNeeded();
 
       // The mod that currently has the moved-files-list file is the active mod:
-      for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(group, source))) {
+      for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(std::move(group), std::move(source)))) {
+        // "group" and "source" have been moved now. "group" and "source" may be empty.
         if (node.is_regular_file()) {
           std::string filename = node.path().filename().string();
 
-          // The active mod's name will be the first portion of the file name:
-          if (filename.ends_with(MOVED_FILES_LIST_POSTFIX)) {
-            return filename.substr(0, filename.size() - MOVED_FILES_LIST_POSTFIX.size());
+          // The active mod's name will be the name of the txt file in the source's folder:
+          if (filename.ends_with(TXT_EXT)) {
+            return filename.substr(0, filename.size() - TXT_EXT.size());
           }
         }
       }
@@ -103,16 +106,18 @@ class Controller {
       this->openSdCardIfNeeded();
 
       std::string modPath = this->getModPath(group, source, mod);
-      std::string movedFilesListFileName = this->getMovedFilesListFileName(group, source, mod);
+      std::string movedFilesListFileName { this->getMovedFilesListFileName(std::move(group), std::move(source), std::move(mod)) };
       {
-        std::ofstream ostrm(movedFilesListFileName);
+        // "source", "group", and "mod" have been moved now. "source", "group", and "mod" may be empty.
+        std::ofstream ostrm(std::move(movedFilesListFileName));
+        // "movedFilesListFileName" has been moved now. "movedFilesListFileName" may be empty.
 
         // For each of the mod's files...
         for (auto& node: std::filesystem::recursive_directory_iterator(modPath)) {
           if (node.is_regular_file()) {
 
             // Get its new path:
-            std::string atmospherePath = this->getAtmosphereModPath(modPath, node.path().string());
+            std::string_view atmospherePath = this->getAtmosphereModPath(modPath.size(), node.path().string());
 
             // Skip the file if there's a conflict:
             if (!std::filesystem::exists(atmospherePath)) {
@@ -133,24 +138,32 @@ class Controller {
       this->openSdCardIfNeeded();
 
       std::string activeMod = this->getActiveMod(source, group);
-      std::string movedFilesListFileName = this->getMovedFilesListFileName(group, source, activeMod);
+
+      // The number of characters in the path to where the modded file's path begins:
+      std::size_t alchemistPathSize = this->getModPath(source, group, activeMod).size();
+
+      std::string movedFilesListFileName {
+        this->getMovedFilesListFileName(std::move(group), std::move(source), std::move(activeMod))
+      };
       {
+        // "source", "group" and "activeMod" have been moved now. "source", "group" and "activeMod" may be empty.
         std::ifstream istrm(movedFilesListFileName);
 
         std::string alchemistModPath;
         // Get each file to bring back from Atmosphere's mods folder:
         while (std::getline(istrm, alchemistModPath)) {
-          std::string atmosphereModPath = this->getAtmosphereModPath(this->getModPath(source, group, activeMod), alchemistModPath);
+
+          std::string_view atmosphereModPath = this->getAtmosphereModPath(alchemistPathSize, alchemistModPath);
 
           // Then bring it back:
           if (std::filesystem::exists(atmosphereModPath)) {
-            std::filesystem::rename(atmosphereModPath, alchemistModPath);
+            std::filesystem::rename(std::move(atmosphereModPath), alchemistModPath);
           }
         }
       }
 
       // Delete the files list when done:
-      std::filesystem::remove(movedFilesListFileName);
+      std::filesystem::remove(std::move(movedFilesListFileName));
     }
 
   private:
@@ -185,7 +198,7 @@ class Controller {
     std::string getGamePath() {
       std::string path = ALCHEMIST_PATH + std::to_string(this->titleId);
       if (std::filesystem::exists(path)) {
-        return path;
+        return std::move(path);
       }
       std::error_code ec = std::make_error_code(std::errc::no_such_file_or_directory);
       throw std::filesystem::filesystem_error("Game Folder not found", ALCHEMIST_PATH, ec);
@@ -195,21 +208,21 @@ class Controller {
      * Gets the file path for the specified group
      */
     std::string getGroupPath(std::string group) {
-      return this->getGamePath() + "/" + group;
+      return this->getGamePath() + "/" + std::move(group);
     }
 
     /**
      * Gets the file path for the specified source within the group
      */
     std::string getSourcePath(std::string group, std::string source) {
-      return this->getGroupPath(group) + "/" + source;
+      return this->getGroupPath(std::move(group)) + "/" + std::move(source);
     }
 
     /**
      * Get the file path for the specified mod within the moddable source
      */
     std::string getModPath(std::string group, std::string source, std::string mod) {
-      return this->getSourcePath(group, source) + "/" + mod;
+      return this->getSourcePath(std::move(group), std::move(source)) + "/" + std::move(mod);
     }
 
     /**
@@ -223,8 +236,8 @@ class Controller {
      * Builds the path a mod's file should have once we intend to move it into Atmosphere's folder
      * It is built off of its current path within the Mod Alchemist's directory structure.
      */
-    std::string getAtmosphereModPath(std::string alchemistModFolderPath, std::string alchemistModFilePath) {
-      return this->getAtmospherePath() + "/" + alchemistModFilePath.substr(alchemistModFolderPath.size());
+    std::string_view getAtmosphereModPath(std::size_t alchemistModFolderPathSize, std::string alchemistModFilePath) {
+      return this->getAtmospherePath() + "/" + alchemistModFilePath.substr(alchemistModFolderPathSize);
     }
 
     /**
@@ -232,7 +245,7 @@ class Controller {
      * 
      * The file should only exist if the mod is currently active
      */
-    std::string getMovedFilesListFileName(std::string group, std::string source, std::string mod) {
-      return this->getSourcePath(group, source) + "/" + mod + MOVED_FILES_LIST_POSTFIX;
+    std::string_view getMovedFilesListFileName(std::string group, std::string source, std::string mod) {
+      return this->getSourcePath(std::move(group), std::move(source)) + "/" + std::move(mod) + TXT_EXT;
     }
 };
