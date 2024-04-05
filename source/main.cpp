@@ -2,7 +2,7 @@
 #include <tesla.hpp>    // The Tesla Header
 #include <fs_dev.h>
 
-#include "ui/ui_groups.hpp" // Include the header file for GuiGroups
+#include "ui/ui_groups.hpp"
 
 
 
@@ -11,18 +11,17 @@ public:
     GuiMain() { }
 
     // Called when this Gui gets loaded to create the UI
-    // Allocate all elements on the heap. libtesla will make sure to clean them up when not needed anymore
     virtual tsl::elm::Element* createUI() override {
         // A OverlayFrame is the base element every overlay consists of. This will draw the default Title and Subtitle.
-        // If you need more information in the header or want to change it's look, use a HeaderOverlayFrame.
         auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "v0.1.0");
 
         auto list = new tsl::elm::List();
 
+        // Option for switching between mods
         auto *mod_item = new tsl::elm::ListItem("Set Mods");
         mod_item->setClickListener([](u64 keys) {
             if (keys & HidNpadButton_A) {
-                tsl::changeTo<GuiGroups>(); // Call the changeTo function with the correct template argument
+                tsl::changeTo<GuiGroups>();
                 return true;
             }
             return false;
@@ -53,10 +52,12 @@ public:
     virtual void initServices() override {}  // Called at the start to initialize all services necessary for this Overlay
     virtual void exitServices() override {}  // Callet at the end to clean up all services previously initialized
 
-    virtual void onShow() override {}    // Called before overlay wants to change from invisible to visible state
+    virtual void onShow() override {}
+
+    // Unmount SD card
     virtual void onHide() override {
         fsdevUnmountDevice("sdmc");
-    }    // Called before overlay wants to change from visible to invisible state
+    }
 
     virtual std::unique_ptr<tsl::Gui> loadInitialGui() override {
         return initially<GuiMain>();  // Initial Gui to load. It's possible to pass arguments to it's constructor like this
