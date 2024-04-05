@@ -2,6 +2,7 @@
 
 #include <dmntcht.h>
 #include "ui_error.hpp"
+#include "ui_mods.hpp"
 #include "../controller.hpp"
 
 class GuiSources : public tsl::Gui {
@@ -10,10 +11,8 @@ class GuiSources : public tsl::Gui {
     std::string group;
 
   public:
-    GuiSources(Controller controller, std::string group) {
-      this->controller = controller;
-      this->group = group;
-    }
+    GuiSources(Controller& controller_, std::string& group_)
+      : controller(controller_), group(group_) { }
 
     // Called when this Gui gets loaded to create the UI
     // Allocate all elements on the heap. libtesla will make sure to clean them up when not needed anymore
