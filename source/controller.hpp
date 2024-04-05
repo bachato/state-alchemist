@@ -10,8 +10,8 @@
 
 class Controller {
   private:
-    bool isSdCardOpen; // Whether the SD card has been mounted or not
     u64 titleId; // The current Game's Title ID
+    bool isSdCardOpen; // Whether the SD card has been mounted or not
 
   public:
     Controller(u64 titleId) {
@@ -164,6 +164,15 @@ class Controller {
 
       // Delete the files list when done:
       std::filesystem::remove(std::move(movedFilesListFileName));
+    }
+
+    /**
+     * Unmount SD card when destroyed 
+     */
+    ~Controller() {
+      if (this->isSdCardOpen) {
+        fsdevUnmountDevice("sdmc");
+      }
     }
 
   private:

@@ -53,11 +53,7 @@ public:
     virtual void exitServices() override {}  // Callet at the end to clean up all services previously initialized
 
     virtual void onShow() override {}
-
-    // Unmount SD card
-    virtual void onHide() override {
-        fsdevUnmountDevice("sdmc");
-    }
+    virtual void onHide() override {}
 
     virtual std::unique_ptr<tsl::Gui> loadInitialGui() override {
         return initially<GuiMain>();  // Initial Gui to load. It's possible to pass arguments to it's constructor like this

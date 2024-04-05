@@ -64,6 +64,8 @@ class GuiMods : public tsl::Gui {
           tsl::changeTo<GuiError>(std::string("Filesystem error: ") + e.what());
         } catch (std::exception &e) {
           tsl::changeTo<GuiError>(e.what());
+        } catch (...) {
+          tsl::changeTo<GuiError>("Unknown error");
         }
     }
 
