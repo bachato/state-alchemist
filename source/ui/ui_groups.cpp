@@ -8,47 +8,39 @@ GuiGroups::GuiGroups() { }
 tsl::elm::Element* GuiGroups::createUI() override {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
-  try {
-    // Get the game's title ID:
-    DmntCheatProcessMetadata metadata;
-    dmntchtGetCheatProcessMetadata(&metadata);
+  // Get the game's title ID:
+  DmntCheatProcessMetadata metadata;
+  dmntchtGetCheatProcessMetadata(&metadata);
 
-    Controller controller = Controller(metadata.title_id);
+  Controller controller = Controller(metadata.title_id);
 
-    auto groupList = new tsl::elm::List();
+  auto groupList = new tsl::elm::List();
 
-    std::vector<std::string> groups = controller.loadGroups();
+  std::vector<std::string> groups = controller.loadGroups();
 
-    // When there are no groups for some odd reason:
-    if (groups.empty()) {
-      auto uiMessage = new tsl::elm::CategoryHeader("No groups found");
-      frame->setContent(uiMessage);
-      return frame;
-    }
-
-    for (const std::string group : groups) {
-      auto item = new tsl::elm::ListItem(group);
-
-      item->setClickListener([&](u64 keys) {
-        if (keys & HidNpadButton_A) {
-          tsl::changeTo<GuiSources>(controller, group);
-          return true;
-        }
-        return false;
-      });
-
-      groupList->addItem(item);
-    }
-
-    frame->setContent(groupList);
+  // When there are no groups for some odd reason:
+  if (groups.empty()) {
+    auto uiMessage = new tsl::elm::CategoryHeader("No groups found");
+    frame->setContent(uiMessage);
     return frame;
-  } catch (std::filesystem::filesystem_error &e) {
-    tsl::changeTo<GuiError>(std::string("Filesystem error: ") + e.what());
-  } catch (std::exception &e) {
-    tsl::changeTo<GuiError>(e.what());
-  } catch (...) {
-    tsl::changeTo<GuiError>("Unknown error");
   }
+
+  for (const std::string group : groups) {
+    auto item = new tsl::elm::ListItem(group);
+
+    item->setClickListener([&](u64 keys) {
+      if (keys & HidNpadButton_A) {
+        tsl::changeTo<GuiSources>(controller, group);
+        return true;
+      }
+      return false;
+    });
+
+    groupList->addItem(item);
+  }
+
+  frame->setContent(groupList);
+  return frame;
 }
 
 void GuiGroups::update() override { }

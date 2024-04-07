@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tesla.hpp>
 #include <switch.h>
 
 #include <vector>
@@ -9,6 +10,7 @@
 #include <fstream>
 
 #include "constants.cpp"
+#include "ui/ui_error.h"
 
 
 class Controller {
@@ -95,12 +97,17 @@ class Controller {
      * Builds the path a mod's file should have once we intend to move it into Atmosphere's folder
      * It is built off of its current path within the Mod Alchemist's directory structure.
      */
-    std::string_view getAtmosphereModPath(std::size_t alchemistModFolderPathSize, std::string alchemistModFilePath);
+    std::string getAtmosphereModPath(std::size_t alchemistModFolderPathSize, std::string alchemistModFilePath);
 
     /**
      * Gets the file path for the list of moved files for the specified mod
      * 
      * The file should only exist if the mod is currently active
      */
-    std::string_view getMovedFilesListFileName(std::string group, std::string source, std::string mod);
+    std::string getMovedFilesListFilePath(std::string group, std::string source, std::string mod);
+
+    /**
+     * Validates the existence of a folder
+     */
+    void validateFolderExistence(std::string path);
 };

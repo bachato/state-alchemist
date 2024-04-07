@@ -2,7 +2,6 @@
 
 #include <tesla.hpp>    // The Tesla Header
 
-#include "ui_error.h"
 #include "../controller.h"
 
 /**

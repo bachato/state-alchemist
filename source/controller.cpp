@@ -13,6 +13,8 @@ std::vector<std::string> Controller::loadGroups() {
 
   std::vector<std::string> groups;
 
+  this->validateFolderExistence(this->getGamePath());
+
   for (auto& node: std::filesystem::directory_iterator(this->getGamePath())) {
     if (node.is_directory()) {
       groups.push_back(node.path().filename().string());
@@ -29,6 +31,8 @@ std::vector<std::string> Controller::loadSources(std::string group) {
   this->openSdCardIfNeeded();
 
   std::vector<std::string> sources;
+
+  this->validateFolderExistence(this->getGroupPath(group));
 
   for (auto& node: std::filesystem::directory_iterator(this->getGroupPath(std::move(group)))) {
     if (node.is_directory()) {
@@ -47,6 +51,8 @@ std::vector<std::string> Controller::loadMods(std::string source, std::string gr
 
   std::vector<std::string> mods;
 
+  this->validateFolderExistence(this->getSourcePath(group, source));
+
   for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(std::move(group), std::move(source)))) {
     if (node.is_directory()) {
       mods.push_back(node.path().filename().string());
@@ -63,6 +69,8 @@ std::vector<std::string> Controller::loadMods(std::string source, std::string gr
  */
 std::string Controller::getActiveMod(std::string source, std::string group) {
   this->openSdCardIfNeeded();
+
+  this->validateFolderExistence(this->getSourcePath(group, source));
 
   for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(std::move(group), std::move(source)))) {
     if (node.is_regular_file()) {
@@ -84,12 +92,20 @@ void Controller::activateMod(std::string source, std::string group, std::string 
   this->openSdCardIfNeeded();
 
   std::string modPath = this->getModPath(group, source, mod);
-  std::string movedFilesListFileName { this->getMovedFilesListFileName(std::move(group), std::move(source), std::move(mod)) };
+  std::string movedFilesFilePath = this->getMovedFilesListFilePath(std::move(group), std::move(source), std::move(mod));
+
+  this->validateFolderExistence(modPath);
+  this->validateFolderExistence(movedFilesFilePath);
+
+  std::string movedFilesListFileName { std::move(movedFilesFilePath) };
   {
     std::ofstream ostrm(std::move(movedFilesListFileName));
 
+    bool fileExists = false;
+
     for (auto& node: std::filesystem::recursive_directory_iterator(modPath)) {
       if (node.is_regular_file()) {
+        fileExists = true;
         std::string_view atmospherePath = this->getAtmosphereModPath(modPath.size(), node.path().string());
 
         if (!std::filesystem::exists(atmospherePath)) {
@@ -97,6 +113,10 @@ void Controller::activateMod(std::string source, std::string group, std::string 
           std::filesystem::rename(node.path(), atmospherePath);
         }
       }
+    }
+
+    if (!fileExists) {
+      tsl::changeTo<GuiError>("Error: Mod folder has no files: " + modPath);
     }
   }
 }
@@ -108,27 +128,41 @@ void Controller::deactivateMod(std::string source, std::string group) {
   this->openSdCardIfNeeded();
 
   std::string activeMod = this->getActiveMod(source, group);
+  std::string modPath = this->getModPath(group, source, activeMod);
 
-  std::size_t alchemistPathSize = this->getModPath(source, group, activeMod).size();
+  this->validateFolderExistence(modPath);
 
-  std::string movedFilesListFileName {
-    this->getMovedFilesListFileName(std::move(group), std::move(source), std::move(activeMod))
-  };
+  std::string_view movedFilesListPath = this->getMovedFilesListFilePath(std::move(group), std::move(source), std::move(activeMod));
+
+  // If the moved-files doesn't exist, then obviously this mod isn't active, so short-circuit:
+  if (!std::filesystem::exists(movedFilesListPath)) {
+    return;
+  }
+
+  short missingFiles = 0;
+
+  std::string openedMovedFilesListPath { movedFilesListPath };
   {
-    std::ifstream istrm(movedFilesListFileName);
+    std::ifstream istrm(openedMovedFilesListPath);
 
     std::string alchemistModPath;
     while (std::getline(istrm, alchemistModPath)) {
 
-      std::string_view atmosphereModPath = this->getAtmosphereModPath(alchemistPathSize, alchemistModPath);
+      std::string atmosphereModPath = this->getAtmosphereModPath(modPath.size(), alchemistModPath);
 
       if (std::filesystem::exists(atmosphereModPath)) {
         std::filesystem::rename(std::move(atmosphereModPath), alchemistModPath);
+      } else {
+        missingFiles++;
       }
     }
   }
 
-  std::filesystem::remove(std::move(movedFilesListFileName));
+  if (missingFiles > 0) {
+    tsl::changeTo<GuiError>("Error: " + std::to_string(missingFiles) + " files are mysteriously missing. You may want to restore from a backup.");
+  }
+
+  std::filesystem::remove(std::move(movedFilesListPath));
 }
 
 /**
@@ -152,8 +186,7 @@ void Controller::openSdCardIfNeeded() {
     Result result;
     result = fsOpenSdCardFileSystem(&this->sdSystem);
     if (R_FAILED(result)) {
-        std::error_code ec(static_cast<int>(result), std::generic_category());
-        throw std::filesystem::filesystem_error("Failed to mount sdmc", std::filesystem::path(), ec);
+        tsl::changeTo<GuiError>("Error: Failed to open SD card filesystem.");
     }
 }
 
@@ -161,14 +194,7 @@ void Controller::openSdCardIfNeeded() {
  * Gets Mod Alchemist's game directory:
  */
 std::string Controller::getGamePath() {
-  std::string path = ALCHEMIST_PATH + std::to_string(this->titleId);
-
-  if (!std::filesystem::exists(path)) {
-    std::error_code ec = std::make_error_code(std::errc::no_such_file_or_directory);
-    throw std::filesystem::filesystem_error("Game Folder not found", ALCHEMIST_PATH, ec);
-  }
-
-  return path;
+  return ALCHEMIST_PATH + std::to_string(this->titleId);
 }
 
 /*
@@ -203,7 +229,7 @@ std::string Controller::getAtmospherePath() {
  * Builds the path a mod's file should have once we intend to move it into Atmosphere's folder
  * It is built off of its current path within the Mod Alchemist's directory structure.
  */
-std::string_view Controller::getAtmosphereModPath(std::size_t alchemistModFolderPathSize, std::string alchemistModFilePath) {
+std::string Controller::getAtmosphereModPath(std::size_t alchemistModFolderPathSize, std::string alchemistModFilePath) {
   return this->getAtmospherePath() + "/" + alchemistModFilePath.substr(alchemistModFolderPathSize);
 }
 
@@ -212,6 +238,15 @@ std::string_view Controller::getAtmosphereModPath(std::size_t alchemistModFolder
  * 
  * The file should only exist if the mod is currently active
  */
-std::string_view Controller::getMovedFilesListFileName(std::string group, std::string source, std::string mod) {
+std::string Controller::getMovedFilesListFilePath(std::string group, std::string source, std::string mod) {
   return this->getSourcePath(std::move(group), std::move(source)) + "/" + std::move(mod) + TXT_EXT;
+}
+
+/**
+ * Validates the existence of a path 
+ */
+void Controller::validateFolderExistence(std::string path) {
+  if (std::filesystem::exists(path) || !std::filesystem::is_directory(path)) {
+    tsl::changeTo<GuiError>("Error: Path does not exist, but it should: " + std::move(path));
+  }
 }

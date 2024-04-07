@@ -3,7 +3,6 @@
 #include <tesla.hpp>
 #include "../controller.h"
 #include <ui_mods.h>
-#include <ui_error.h>
 
 /**
  * UI for displaying the moddable sources within each group

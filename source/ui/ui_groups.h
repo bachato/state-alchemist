@@ -3,7 +3,6 @@
 #include <tesla.hpp>    // The Tesla Header
 
 #include <dmntcht.h>
-#include "ui_error.h"
 #include "ui_sources.h"
 #include "../controller.h"
 
