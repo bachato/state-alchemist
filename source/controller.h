@@ -1,18 +1,19 @@
 #pragma once
 
-#include <types.h>
+#include <switch.h>
+
 #include <vector>
 #include <string>
 #include <system_error>
 #include <filesystem>
 #include <fstream>
-#include <fs.h>
 
 #include "constants.cpp"
 
 
 class Controller {
   private:
+    FsFileSystem sdSystem;
     u64 titleId; // The current Game's Title ID
     bool isSdCardOpen; // Whether the SD card has been mounted or not
 
