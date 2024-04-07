@@ -33,7 +33,8 @@
                 "${workspaceFolder}/libs/libtesla/include/**",
                 "/opt/devkitpro/libnx/include/switch/services",
                 "/opt/devkitpro/libnx/include/switch/runtime/devices",
-                "${workspaceFolder}/libs/atmosphere-libs/libstratosphere/source/dmnt"
+                "${workspaceFolder}/libs/atmosphere-libs/libstratosphere/source/dmnt",
+                "/opt/devkitpro/libnx/include/switch"
             ],
             "defines": [
                 "SWITCH",

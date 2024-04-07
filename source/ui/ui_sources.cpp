@@ -1,9 +1,4 @@
-#include <tesla.hpp>    // The Tesla Header
-
-#include <dmntcht.h>
-#include "ui_error.hpp"
-#include "ui_mods.hpp"
-#include "../controller.hpp"
+#include "ui_sources.h"
 
 /**
  * UI for displaying the moddable sources within each group

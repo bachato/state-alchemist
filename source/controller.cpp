@@ -1,15 +1,9 @@
-#include <tesla.hpp>    // The Tesla Header
-
-#include <string>
-#include <fs_dev.h>
-#include <system_error>
-#include <filesystem>
-#include <fstream>
-#include "constants.hpp"
+#include "controller.h"
 
 
 class Controller {
   private:
+    FsFileSystem sdSystem;
     u64 titleId; // The current Game's Title ID
     bool isSdCardOpen; // Whether the SD card has been mounted or not
 
@@ -171,7 +165,7 @@ class Controller {
      */
     ~Controller() {
       if (this->isSdCardOpen) {
-        fsdevUnmountDevice("sdmc");
+        fsFsClose(&this->sdSystem);
       }
     }
 
@@ -189,12 +183,7 @@ class Controller {
 
         this->isSdCardOpen = true;
         Result result;
-        result = fsInitialize();
-        if (R_FAILED(result)) {
-          std::error_code ec(static_cast<int>(result), std::generic_category());
-          throw std::filesystem::filesystem_error("Failed to initialize fs", std::filesystem::path(), ec);
-        }
-        result = fsdevMountSdmc();
+        result = fsOpenSdCardFileSystem(&this->sdSystem);
         if (R_FAILED(result)) {
           std::error_code ec(static_cast<int>(result), std::generic_category());
           throw std::filesystem::filesystem_error("Failed to mount sdmc", std::filesystem::path(), ec);

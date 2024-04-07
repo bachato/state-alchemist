@@ -1,4 +1,4 @@
-#include <tesla.hpp>    // The Tesla Header
+#include "ui_error.h"
 
 /**
  * UI displayed when an error occurs (hopefully this UI is never seen)
@@ -28,4 +28,3 @@ class GuiError : public tsl::Gui {
         return false;
     }
 };
-

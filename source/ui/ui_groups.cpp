@@ -1,9 +1,4 @@
-#include <tesla.hpp>    // The Tesla Header
-
-#include <dmntcht.h>
-#include "ui_error.hpp"
-#include "ui_sources.hpp"
-#include "../controller.hpp"
+#include "ui_groups.h"
 
 /**
  * List of the groups of mods
@@ -68,4 +63,3 @@ class GuiGroups : public tsl::Gui {
         return false;
     }
 };
-

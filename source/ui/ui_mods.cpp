@@ -1,7 +1,6 @@
 #include <tesla.hpp>    // The Tesla Header
 
-#include "ui_error.hpp"
-#include "../controller.hpp"
+#include "ui_mods.h"
 
 /**
  * List of toggable mods for a specific source 
@@ -79,4 +78,3 @@ class GuiMods : public tsl::Gui {
         return false;
     }
 };
-

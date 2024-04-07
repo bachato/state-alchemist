@@ -1,3 +1,6 @@
 [submodule "libs/libtesla"]
 	path = libs/libtesla
 	url = https://github.com/WerWolv/libtesla
+[submodule "libs/atmosphere-libs"]
+	path = libs/atmosphere-libs
+	url = https://github.com/Atmosphere-NX/Atmosphere-libs
