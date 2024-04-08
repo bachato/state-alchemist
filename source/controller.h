@@ -1,16 +1,10 @@
 #pragma once
 
-#include <tesla.hpp>
 #include <switch.h>
 
 #include <vector>
 #include <string>
-#include <system_error>
 #include <filesystem>
-#include <fstream>
-
-#include "constants.cpp"
-#include "ui/ui_error.h"
 
 
 class Controller {
@@ -20,7 +14,9 @@ class Controller {
     bool isSdCardOpen; // Whether the SD card has been mounted or not
 
   public:
-    Controller(u64 titleId);
+    Controller(u64 titleId) {
+      this->titleId = titleId;
+    }
 
     /*
      * Load all groups from the game folder

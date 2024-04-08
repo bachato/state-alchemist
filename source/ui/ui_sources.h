@@ -2,7 +2,6 @@
 
 #include <tesla.hpp>
 #include "../controller.h"
-#include <ui_mods.h>
 
 /**
  * UI for displaying the moddable sources within each group
@@ -13,7 +12,7 @@ class GuiSources : public tsl::Gui {
     std::string group;
 
   public:
-    GuiSources(Controller& controller_, std::string& group_) : controller(controller_), group(group_);
+    GuiSources(Controller& controller_, std::string& group_) : controller(controller_), group(group_) {};
 
     virtual tsl::elm::Element* createUI() override;
 

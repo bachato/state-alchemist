@@ -2,16 +2,12 @@
 
 #include <tesla.hpp>    // The Tesla Header
 
-#include <dmntcht.h>
-#include "ui_sources.h"
-#include "../controller.h"
-
 /**
  * List of the groups of mods
  */
 class GuiGroups : public tsl::Gui {
   public:
-    GuiGroups() { }
+    GuiGroups();
 
     virtual tsl::elm::Element* createUI() override;
 

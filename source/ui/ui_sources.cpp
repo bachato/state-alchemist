@@ -1,12 +1,10 @@
 #include "ui_sources.h"
 
-/**
- * UI for displaying the moddable sources within each group
- */
-GuiSources::GuiSources(Controller& controller_, std::string& group_)
-  : controller(controller_), group(group_) { }
+#include <tesla.hpp>
+#include "../controller.h"
+#include "ui_mods.h"
 
-tsl::elm::Element* GuiSources::createUI() override {
+tsl::elm::Element* GuiSources::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", this->group);
 
   auto groupList = new tsl::elm::List();
@@ -39,9 +37,9 @@ tsl::elm::Element* GuiSources::createUI() override {
   return frame;
 }
 
-void GuiSources::update() override { }
+void GuiSources::update() { }
 
-bool GuiSources::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override {
+bool GuiSources::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
   if (keysDown & HidNpadButton_B) {
     tsl::goBack();
     return true;

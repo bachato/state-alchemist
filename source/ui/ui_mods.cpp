@@ -1,16 +1,10 @@
-#include <tesla.hpp>    // The Tesla Header
-
 #include "ui_mods.h"
 
-/**
- * List of toggable mods for a specific source 
- */
-GuiMods::GuiMods(Controller& controller_, std::string& source_, std::string& group_)
-  : controller(controller_), source(source_), group(group_) {
-    this->toggles = std::vector<tsl::elm::ToggleListItem*>();
-  }
+#include <tesla.hpp>    // The Tesla Header
 
-tsl::elm::Element* GuiMods::createUI() override {
+#include "../controller.h"
+
+tsl::elm::Element* GuiMods::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", this->source);
 
   std::vector<std::string> mods = controller.loadMods(this->source, this->group);
@@ -52,9 +46,9 @@ tsl::elm::Element* GuiMods::createUI() override {
   return frame;
 }
 
-void GuiMods::update() override { }
+void GuiMods::update() { }
 
-bool GuiMods::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override {
+bool GuiMods::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
   if (keysDown & HidNpadButton_B) {
     tsl::goBack();
     return true;

@@ -1,11 +1,12 @@
 #include "ui_groups.h"
 
-/**
- * List of the groups of mods
- */
-GuiGroups::GuiGroups() { }
+#include <tesla.hpp>    // The Tesla Header
 
-tsl::elm::Element* GuiGroups::createUI() override {
+#include <dmntcht.h>
+#include "ui_sources.h"
+#include "../controller.h"
+
+tsl::elm::Element* GuiGroups::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
   // Get the game's title ID:
@@ -43,9 +44,9 @@ tsl::elm::Element* GuiGroups::createUI() override {
   return frame;
 }
 
-void GuiGroups::update() override { }
+void GuiGroups::update() { }
 
-bool GuiGroups::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override {
+bool GuiGroups::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
   if (keysDown & HidNpadButton_B) {
     tsl::goBack();
     return true;

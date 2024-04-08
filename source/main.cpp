@@ -1,8 +1,10 @@
 #include "main.h"
 
-GuiMain::GuiMain() { }
+#define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
+#include <tesla.hpp>    // The Tesla Header
+#include "ui/ui_groups.h"
 
-tsl::elm::Element* GuiMain::createUI() override {
+tsl::elm::Element* GuiMain::createUI() {
     // A OverlayFrame is the base element every overlay consists of. This will draw the default Title and Subtitle.
     auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "v0.1.0");
 
@@ -27,20 +29,20 @@ tsl::elm::Element* GuiMain::createUI() override {
 }
 
 // Called once every frame to update values
-void GuiMain::update() override { }
+void GuiMain::update() { }
 
 // Called once every frame to handle inputs not handled by other UI elements
-bool GuiMain::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) override {
+bool GuiMain::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
     return false;   // Return true here to signal the inputs have been consumed
 }
 
-void ModAlchemist::initServices() override {}
-void ModAlchemist::exitServices() override {}
+void ModAlchemist::initServices() {}
+void ModAlchemist::exitServices() {}
 
-void ModAlchemist::onShow() override {}
-void ModAlchemist::onHide() override {}
+void ModAlchemist::onShow() {}
+void ModAlchemist::onHide() {}
 
-std::unique_ptr<tsl::Gui> ModAlchemist::loadInitialGui() override {
+std::unique_ptr<tsl::Gui> ModAlchemist::loadInitialGui() {
   return initially<GuiMain>();
 }
 

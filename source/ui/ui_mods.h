@@ -16,7 +16,7 @@ class GuiMods : public tsl::Gui {
 
   public:
     GuiMods(Controller& controller_, std::string& source_, std::string& group_)
-      : controller(controller_), source(source_), group(group_);
+      : controller(controller_), source(source_), group(group_) {}
 
     virtual tsl::elm::Element* createUI() override;
 

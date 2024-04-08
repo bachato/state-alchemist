@@ -10,7 +10,7 @@ class GuiError : public tsl::Gui {
     std::string message;
 
   public:
-    GuiError(std::string message);
+    GuiError(std::string message) { this->message = message; }
 
     virtual tsl::elm::Element* createUI() override;
 

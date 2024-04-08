@@ -1,9 +1,15 @@
 #include "controller.h"
 
+#include <tesla.hpp>
+#include <switch.h>
 
-Controller::Controller(u64 titleId) {
-  this->titleId = titleId;
-}
+#include <vector>
+#include <string>
+#include <filesystem>
+#include <fstream>
+
+#include "constants.cpp"
+#include "ui/ui_error.h"
 
 /**
  * Load all groups from the game folder
