@@ -48,6 +48,9 @@ INCLUDES	:=	include libs/libtesla/include libs/atmosphere-libs/libstratosphere/s
 
 NO_ICON		:=  1
 
+DMNTCHT_DIR	:= $(TOPDIR)/libs/dmntcht
+DMNTCHT_LIB	:= $(DMNTCHT_DIR)/lib/libdmntcht.a
+
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
@@ -63,7 +66,7 @@ CXXFLAGS	:= $(CFLAGS) -fno-exceptions -std=c++20
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:= -lnx
+LIBS	:= -lnx $(DMNTCHT_LIB)
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
@@ -171,6 +174,7 @@ $(BUILD):
 
 #---------------------------------------------------------------------------------
 clean:
+	@make clean -C $(DMNTCHT_DIR)
 	@rm -fr $(BUILD) $(TARGET).ovl $(TARGET).nro $(TARGET).nacp $(TARGET).elf
 
 
@@ -189,9 +193,12 @@ $(OUTPUT).ovl		:	$(OUTPUT).elf $(OUTPUT).nacp
 	@elf2nro $< $@ $(NROFLAGS)
 	@echo "built ... $(notdir $(OUTPUT).ovl)"
 
-$(OUTPUT).elf	:	$(OFILES)
+$(OUTPUT).elf	:	$(OFILES) $(DMNTCHT_LIB)
 
 $(OFILES_SRC)	: $(HFILES_BIN)
+
+$(DMNTCHT_LIB):
+	@make -C $(DMNTCHT_DIR)
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data

@@ -1,55 +1,64 @@
-#include "ui_groups.h"
-
 #include <tesla.hpp>    // The Tesla Header
-
 #include <dmntcht.h>
-#include "ui_sources.h"
+
+#include "ui_sources.cpp"
 #include "../controller.h"
 
-tsl::elm::Element* GuiGroups::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
+class GuiGroups : public tsl::Gui {
+  public:
+    GuiGroups() {}
 
-  // Get the game's title ID:
-  DmntCheatProcessMetadata metadata;
-  dmntchtGetCheatProcessMetadata(&metadata);
+    virtual tsl::elm::Element* createUI() override {
+      auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
-  Controller controller = Controller(metadata.title_id);
+      // Get the game's title ID:
+      DmntCheatProcessMetadata metadata;
+      dmntchtGetCheatProcessMetadata(&metadata);
 
-  auto groupList = new tsl::elm::List();
+      Controller controller = Controller(metadata.title_id);
 
-  std::vector<std::string> groups = controller.loadGroups();
+      auto groupList = new tsl::elm::List();
 
-  // When there are no groups for some odd reason:
-  if (groups.empty()) {
-    auto uiMessage = new tsl::elm::CategoryHeader("No groups found");
-    frame->setContent(uiMessage);
-    return frame;
-  }
+      std::vector<std::string> groups = controller.loadGroups();
 
-  for (const std::string group : groups) {
-    auto item = new tsl::elm::ListItem(group);
+      // When there are no groups for some odd reason:
+      if (groups.empty()) {
+        auto uiMessage = new tsl::elm::CategoryHeader("No groups found");
+        frame->setContent(uiMessage);
+        return frame;
+      }
 
-    item->setClickListener([&](u64 keys) {
-      if (keys & HidNpadButton_A) {
-        tsl::changeTo<GuiSources>(controller, group);
+      for (const std::string &group : groups) {
+        auto item = new tsl::elm::ListItem(group);
+
+        item->setClickListener([&](u64 keys) {
+          if (keys & HidNpadButton_A) {
+            tsl::changeTo<GuiSources>(controller, group);
+            return true;
+          }
+          return false;
+        });
+
+        groupList->addItem(item);
+      }
+
+      frame->setContent(groupList);
+      return frame;
+    }
+
+    virtual void update() override { }
+
+    virtual bool handleInput(
+      u64 keysDown,
+      u64 keysHeld,
+      const HidTouchState &touchPos,
+      HidAnalogStickState joyStickPosLeft,
+      HidAnalogStickState joyStickPosRight
+    ) override {
+      if (keysDown & HidNpadButton_B) {
+        tsl::goBack();
         return true;
       }
       return false;
-    });
-
-    groupList->addItem(item);
-  }
-
-  frame->setContent(groupList);
-  return frame;
-}
-
-void GuiGroups::update() { }
-
-bool GuiGroups::handleInput(u64 keysDown, u64 keysHeld, const HidTouchState &touchPos, HidAnalogStickState joyStickPosLeft, HidAnalogStickState joyStickPosRight) {
-  if (keysDown & HidNpadButton_B) {
-    tsl::goBack();
-    return true;
-  }
-  return false;
-}
+    }
+};

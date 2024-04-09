@@ -1,15 +1,7 @@
 #include "controller.h"
 
-#include <tesla.hpp>
-#include <switch.h>
-
-#include <vector>
-#include <string>
-#include <filesystem>
-#include <fstream>
-
 #include "constants.cpp"
-#include "ui/ui_error.h"
+#include "ui/ui_error.cpp"
 
 /**
  * Load all groups from the game folder

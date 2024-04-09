@@ -1,8 +1,10 @@
 #pragma once
 
 #include <tesla.hpp>    // The Tesla Header
+#include <switch.h>
 
-
+#include <vector>
+#include <string>
 
 class GuiMain : public tsl::Gui {
 public:

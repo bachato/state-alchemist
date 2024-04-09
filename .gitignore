@@ -3,6 +3,8 @@ build/
 
 libs/atmosphere-libs
 
+libs/dmntcht
+
 *.ovl
 
 *.elf
