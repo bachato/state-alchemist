@@ -1,6 +1,5 @@
 #include "main.h"
 
-#define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
 #include "ui/ui_groups.cpp"
 
 tsl::elm::Element* GuiMain::createUI() {
