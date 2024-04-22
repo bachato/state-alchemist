@@ -64,6 +64,45 @@ class Controller {
     void openSdCardIfNeeded();
 
     /**
+     * Creates a new open FsDir object for the specified path
+     * 
+     * Don't forget to close when done
+     */
+    FsDir openDirectory(std::string path, u32 mode);
+
+    /**
+     * Changes an FsDir instance to the specified path
+     */
+    void changeDirectory(FsDir& dir, std::string path, u32 mode);
+
+    bool Controller::doesFileExist(std::string path);
+    bool Controller::doesFileNotExist(std::string path);
+
+    /**
+     * Gets a vector of all folder names that are directly within the specified path
+     */
+    std::vector<std::string> listSubfolderNames(std::string path);
+
+    /**
+     * Records the atmospherePath parameter for a file being moved in modPath
+     * Data is written to the movedFilesListPath file
+     * 
+     * offset is expected to be at the end of the file,
+     * and it's updated to the new position at the end of file
+     */
+    void recordFile(
+      std::string atmospherePath,
+      std::string modPath,
+      std::string movedFilesListPath,
+      s64& offset
+    );
+
+    /**
+     * Changes the fromPath file parameter's location to what's specified as the toPath parameter
+     */
+    void moveFile(std::string fromPath, std::string toPath);
+
+    /**
      * Gets Mod Alchemist's game directory:
      */
     std::string getGamePath();
@@ -100,9 +139,4 @@ class Controller {
      * The file should only exist if the mod is currently active
      */
     std::string getMovedFilesListFilePath(std::string group, std::string source, std::string mod);
-
-    /**
-     * Validates the existence of a folder
-     */
-    void validateFolderExistence(std::string path);
 };

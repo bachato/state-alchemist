@@ -4,7 +4,6 @@
 
 #include "ui/ui_error.h"
 
-#include <filesystem>
 #include <tesla.hpp>
 
 /**
@@ -12,18 +11,7 @@
  */
 std::vector<std::string> Controller::loadGroups() {
   this->openSdCardIfNeeded();
-
-  std::vector<std::string> groups;
-
-  this->validateFolderExistence(this->getGamePath());
-
-  for (auto& node: std::filesystem::directory_iterator(this->getGamePath())) {
-    if (node.is_directory()) {
-      groups.push_back(node.path().filename().string());
-    }
-  }
-
-  return groups;
+  return this->listSubfolderNames(this->getGamePath());
 }
 
 /**
@@ -31,18 +19,7 @@ std::vector<std::string> Controller::loadGroups() {
  */
 std::vector<std::string> Controller::loadSources(std::string group) {
   this->openSdCardIfNeeded();
-
-  std::vector<std::string> sources;
-
-  this->validateFolderExistence(this->getGroupPath(group));
-
-  for (auto& node: std::filesystem::directory_iterator(this->getGroupPath(std::move(group)))) {
-    if (node.is_directory()) {
-      sources.push_back(node.path().filename().string());
-    }
-  }
-
-  return sources;
+  return this->listSubfolderNames(this->getGroupPath(std::move(group)));
 }
 
 /**
@@ -50,18 +27,7 @@ std::vector<std::string> Controller::loadSources(std::string group) {
  */
 std::vector<std::string> Controller::loadMods(std::string source, std::string group) {
   this->openSdCardIfNeeded();
-
-  std::vector<std::string> mods;
-
-  this->validateFolderExistence(this->getSourcePath(group, source));
-
-  for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(std::move(group), std::move(source)))) {
-    if (node.is_directory()) {
-      mods.push_back(node.path().filename().string());
-    }
-  }
-
-  return mods;
+  return this->listSubfolderNames(this->getSourcePath(std::move(group), std::move(source)));
 }
 
 /**
@@ -72,55 +38,118 @@ std::vector<std::string> Controller::loadMods(std::string source, std::string gr
 std::string Controller::getActiveMod(std::string source, std::string group) {
   this->openSdCardIfNeeded();
 
-  this->validateFolderExistence(this->getSourcePath(group, source));
+  // Open to the correct source directory
+  FsDir sourceDir = this->openDirectory(this->getSourcePath(group, source), FsDirOpenMode_ReadFiles);
 
-  for (auto& node: std::filesystem::directory_iterator(this->getSourcePath(std::move(group), std::move(source)))) {
-    if (node.is_regular_file()) {
-      std::string filename = node.path().filename().string();
+  s64 entryCount;
+  fsDirGetEntryCount(&sourceDir, &entryCount);
 
-      if (filename.ends_with(TXT_EXT)) {
-        return filename.substr(0, filename.size() - TXT_EXT.size());
+  // Find the .txt file in the directory. The name would be the active mod:
+  FsDirectoryEntry entry;
+  s64 readCount;
+  std::string activeMod = "";
+  while (R_SUCCEEDED(fsDirRead(&sourceDir, &readCount, entryCount, &entry))) {
+    if (entry.type == FsDirEntryType_File) {
+      std::string_view name(entry.name);
+      if (name.find(TXT_EXT) != std::string::npos) {
+        activeMod = name.substr(0, name.size() - TXT_EXT.size());
+        break;
       }
     }
   }
+  fsDirClose(&sourceDir);
 
-  return "";
+  return activeMod;
 }
 
 /**
  * Activates the specified mod, moving all its files into the atmosphere folder for the game
+ * 
+ * Make sure to deactivate any existing active mod for this source if there is one
  */
 void Controller::activateMod(std::string source, std::string group, std::string mod) {
   this->openSdCardIfNeeded();
 
+  // Path to the "mod" folder in alchemy's directory:
   std::string modPath = this->getModPath(group, source, mod);
+  // Path of the txt file for the active mod:
   std::string movedFilesFilePath = this->getMovedFilesListFilePath(std::move(group), std::move(source), std::move(mod));
 
-  this->validateFolderExistence(modPath);
-  this->validateFolderExistence(movedFilesFilePath);
+  FsDir dir = this->openDirectory(modPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
-  std::string movedFilesListFileName { std::move(movedFilesFilePath) };
-  {
-    std::ofstream ostrm(std::move(movedFilesListFileName));
+  // Used for "storing" data of parent folders when traversing deeper into the hierarchy:
+  std::vector<u64> entryCounts;
+  std::vector<u64> readCounts;
 
-    bool fileExists = false;
+  // The directory we are currently at:
+  std::string currentDirectory = modPath;
 
-    for (auto& node: std::filesystem::recursive_directory_iterator(modPath)) {
-      if (node.is_regular_file()) {
-        fileExists = true;
-        std::string_view atmospherePath = this->getAtmosphereModPath(modPath.size(), node.path().string());
+  // Position in the txt file where we should write the next file path:
+  s64 txtOffset = 0;
 
-        if (!std::filesystem::exists(atmospherePath)) {
-          ostrm << node.path().string() << std::endl;
-          std::filesystem::rename(node.path(), atmospherePath);
-        }
+  // Counts for entries of currentDirectory:
+  s64 currentReadCount = 0;
+  s64 currentEntryCount;
+  fsDirGetEntryCount(&dir, &currentEntryCount);
+
+  // Set to true once we have traversed the entire folder directory within the mod folder:
+  bool isDone = false;
+  while (!isDone) {
+
+    // If we have analyzed all entries in the current directory, navigate back up to where we left off in the parent:
+    if (currentEntryCount == currentReadCount) {
+
+      // If there's nothing left in our count storage, we've navigated everything, so we're done:
+      if (entryCounts.size() == 0) {
+        isDone = true;
+        break;
+      } else {
+        // Otherwise, let's get back the count data of where we left off in the parent:
+        currentEntryCount = entryCounts.back();
+        currentReadCount = readCounts.back();
+        entryCounts.pop_back();
+        readCounts.pop_back();
+
+        // Remove the string portion after the last '/' to get the parent's path:
+        std::size_t lastSlashIndex = currentDirectory.rfind('/');
+        currentDirectory = currentDirectory.substr(0, lastSlashIndex);
+        this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
       }
     }
 
-    if (!fileExists) {
-      tsl::changeTo<GuiError>("Error: Mod folder has no files: " + modPath);
+    FsDirectoryEntry entry;
+
+    if (R_SUCCEEDED(fsDirRead(&dir, &currentReadCount, currentEntryCount, &entry))) {
+
+      // The entry path we will look at next:
+      std::string nextPath = currentDirectory + "/" + entry.name;
+
+      // If the next entry is a file, we will move it and record it as moved as long as there isn't a conflict:
+      if (entry.type == FsDirEntryType_File) {
+        std::string atmospherePath = this->getAtmosphereModPath(modPath.size(), nextPath);
+
+        if (this->doesFileNotExist(atmospherePath)) {
+          this->recordFile(atmospherePath, modPath, movedFilesFilePath, txtOffset);
+          this->moveFile(nextPath, atmospherePath);
+        }
+      // If the next entry is a folder, we will traverse within it:
+      } else if (entry.type == FsDirEntryType_Dir) {
+
+        // Add the current counts to the storage:
+        entryCounts.push_back(currentEntryCount);
+        readCounts.push_back(currentReadCount);
+
+        currentDirectory = nextPath;
+        this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
+
+        // Have the counts ready for the next directory:
+        fsDirGetEntryCount(&dir, &currentEntryCount);
+        currentReadCount = 0;
+      }
     }
   }
+
+  fsDirClose(&dir);
 }
 
 /**
@@ -130,41 +159,59 @@ void Controller::deactivateMod(std::string source, std::string group) {
   this->openSdCardIfNeeded();
 
   std::string activeMod = this->getActiveMod(source, group);
-  std::string modPath = this->getModPath(group, source, activeMod);
 
-  this->validateFolderExistence(modPath);
+  // Path of the txt file for the active mod:
+  std::string movedFilesListPath = this->getMovedFilesListFilePath(group, source, activeMod);
 
-  std::string_view movedFilesListPath = this->getMovedFilesListFilePath(std::move(group), std::move(source), std::move(activeMod));
-
-  // If the moved-files doesn't exist, then obviously this mod isn't active, so short-circuit:
-  if (!std::filesystem::exists(movedFilesListPath)) {
-    return;
+  // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
+  FsFile movedFilesList;
+  if (R_FAILED(fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Read, &movedFilesList))) {
+    tsl::changeTo<GuiError>("Error: Failed to open file at " + movedFilesListPath);
   }
 
-  short missingFiles = 0;
+  s64 fileSize;
+  if (R_FAILED(fsFileGetSize(&movedFilesList, &fileSize))) {
+    tsl::changeTo<GuiError>("Error: Failed to get file size at " + movedFilesListPath);
+  }
 
-  std::string openedMovedFilesListPath { movedFilesListPath };
-  {
-    std::ifstream istrm(openedMovedFilesListPath);
+  // Used to stream the file a small number of bytes at a time to minimize memory consumption:
+  s64 offset = 0;
+  char* buffer = new char[FILE_LIST_BUFFER_SIZE];
+  std::string pathBuilder = "";
 
-    std::string alchemistModPath;
-    while (std::getline(istrm, alchemistModPath)) {
+  // As long as there is still data in the file:
+  while (offset < fileSize) {
 
-      std::string atmosphereModPath = this->getAtmosphereModPath(modPath.size(), alchemistModPath);
-
-      if (std::filesystem::exists(atmosphereModPath)) {
-        std::filesystem::rename(std::move(atmosphereModPath), alchemistModPath);
-      } else {
-        missingFiles++;
-      }
+    // Read some of the text into our buffer:
+    if (R_FAILED(fsFileRead(&movedFilesList, offset, buffer, FILE_LIST_BUFFER_SIZE, FsReadOption_None, nullptr))) {
+      tsl::changeTo<GuiError>("Error: Failed to read file at " + movedFilesListPath);
     }
+
+    // Append it to the string we're using to build the next path:
+    pathBuilder += std::string_view(buffer, FILE_LIST_BUFFER_SIZE);
+
+    // If the path builder got a new line character from the buffer, we have a full path:
+    std::size_t newLinePos = pathBuilder.find('\n');
+    if (newLinePos != std::string::npos) {
+      // Trim the new line and any characters that were gathered after it to get the cleaned atmosphere file path:
+      std::string atmoPath = pathBuilder.substr(0, newLinePos);
+
+      // Move any characters gathered after the new line to the pathBuilder string for the next path:
+      pathBuilder = pathBuilder.substr(newLinePos + 1);
+
+      // The file's original location can be built by replacing the atmosphere portion of the path with alchemy's portion:
+      std::string originalPath = this->getModPath(group, source, activeMod) + atmoPath.substr(this->getAtmospherePath().size());
+
+      this->moveFile(atmoPath, originalPath);
+    }
+
+    offset += FILE_LIST_BUFFER_SIZE;
   }
 
-  if (missingFiles > 0) {
-    tsl::changeTo<GuiError>("Error: " + std::to_string(missingFiles) + " files are mysteriously missing. You may want to restore from a backup.");
-  }
+  // Once all the files have been returned, delete the txt list:
+  fsFsDeleteFile(&this->sdSystem, movedFilesListPath.c_str());
 
-  std::filesystem::remove(std::move(movedFilesListPath));
+  fsFileClose(&movedFilesList);
 }
 
 /**
@@ -190,6 +237,112 @@ void Controller::openSdCardIfNeeded() {
     if (R_FAILED(result)) {
         tsl::changeTo<GuiError>("Error: Failed to open SD card filesystem.");
     }
+}
+
+/**
+ * Creates a new open FsDir object for the specified path
+ * 
+ * Don't forget to close when done
+ */
+FsDir Controller::openDirectory(std::string path, u32 mode) {
+  FsDir dir;
+  this->changeDirectory(dir, path, mode);
+  return dir;
+}
+
+/**
+ * Changes an FsDir instance to the specified path
+ */
+void Controller::changeDirectory(FsDir& dir, std::string path, u32 mode) {
+  if (R_FAILED(fsFsOpenDirectory(&this->sdSystem, path.c_str(), mode, &dir))) {
+    tsl::changeTo<GuiError>("Error: Failed to open directory at " + path);
+  }
+}
+
+bool Controller::doesFileExist(std::string path) {
+  FsDir dir;
+  // If the file can be opened, it exists:
+  bool exists = R_SUCCEEDED(fsFsOpenDirectory(&this->sdSystem, path.c_str(), FsDirOpenMode_ReadFiles, &dir));
+  fsDirClose(&dir);
+  return exists;
+}
+
+bool Controller::doesFileNotExist(std::string path) {
+  return !this->doesFileExist(path);
+}
+
+/**
+ * Gets a vector of all folder names that are directly within the specified path
+ */
+std::vector<std::string> Controller::listSubfolderNames(std::string path) {
+  std::vector<std::string> subfolders;
+
+  FsDir dir = this->openDirectory(path, FsDirOpenMode_ReadDirs);
+
+  s64 entryCount;
+  fsDirGetEntryCount(&dir, &entryCount);
+
+  FsDirectoryEntry entry;
+  s64 readCount;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, entryCount, &entry))) {
+    if (entry.type == FsDirEntryType_Dir) {
+      subfolders.push_back(entry.name);
+    }
+  }
+
+  fsDirClose(&dir);
+
+  return subfolders;
+}
+
+/**
+ * Records the atmospherePath parameter for a file being moved in modPath
+ * Data is written to the movedFilesListPath file
+ * 
+ * offset is expected to be at the end of the file,
+ * and it's updated to the new position at the end of file
+ */
+void Controller::recordFile(
+  std::string atmospherePath,
+  std::string modPath,
+  std::string movedFilesListPath,
+  s64& offset 
+) {
+
+  // If the file hasn't been created yet, create it:
+  if (this->doesFileNotExist(movedFilesListPath)) {
+    if (R_FAILED(fsFsCreateFile(&this->sdSystem, movedFilesListPath.c_str(), 0, 0))) {
+      tsl::changeTo<GuiError>("Error: Failed to create file at " + movedFilesListPath);
+    }
+  }
+  
+  // Open the file:
+  FsFile movedListFile;
+  if (R_FAILED(fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Write, &movedListFile))) {
+    tsl::changeTo<GuiError>("Error: Failed to open file at " + movedFilesListPath);
+  }
+
+  // Paths we record are delimited by new lines:
+  std::string line = atmospherePath + "\n";
+
+  // Write the path to the end of the list:
+  if (R_FAILED(fsFileWrite(&movedListFile, offset, line.c_str(), line.size(), FsWriteOption_Flush))) {
+    tsl::changeTo<GuiError>("Error: Failed to write to file at " + movedFilesListPath);
+  }
+
+  // Update the offset to the end of the file:
+  offset += line.size();
+
+  fsFileClose(&movedListFile);
+}
+
+/**
+ * Changes the fromPath file parameter's location to what's specified as the toPath parameter
+ */
+void Controller::moveFile(std::string fromPath, std::string toPath) {
+  if (R_FAILED(fsFsRenameFile(&this->sdSystem, fromPath.c_str(), toPath.c_str()))) {
+    tsl::changeTo<GuiError>("Error: Failed to move file from " + fromPath + " to " + toPath);
+  }
 }
 
 /*
@@ -242,13 +395,4 @@ std::string Controller::getAtmosphereModPath(std::size_t alchemistModFolderPathS
  */
 std::string Controller::getMovedFilesListFilePath(std::string group, std::string source, std::string mod) {
   return this->getSourcePath(std::move(group), std::move(source)) + "/" + std::move(mod) + TXT_EXT;
-}
-
-/**
- * Validates the existence of a path 
- */
-void Controller::validateFolderExistence(std::string path) {
-  if (std::filesystem::exists(path) || !std::filesystem::is_directory(path)) {
-    tsl::changeTo<GuiError>("Error: Path does not exist, but it should: " + std::move(path));
-  }
 }

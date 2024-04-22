@@ -69,5 +69,13 @@
         "span": "cpp",
         "stop_token": "cpp",
         "variant": "cpp"
-    }
+    },
+    "C_Cpp.intelliSenseEngineFallback": "enabled",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/gt/Desktop/mod-alchemist",
+            "binaryPath": "/home/gt/Desktop/mod-alchemist/mod-alchemist.elf",
+            "binaryArgs": []
+        }
+    ]
 }
