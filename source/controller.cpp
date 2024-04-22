@@ -9,7 +9,7 @@
 /**
  * Load all groups from the game folder
  */
-std::vector<std::string> Controller::loadGroups() {
+std::vector<std::string_view> Controller::loadGroups() {
   this->openSdCardIfNeeded();
   return this->listSubfolderNames(this->getGamePath());
 }
@@ -17,7 +17,7 @@ std::vector<std::string> Controller::loadGroups() {
 /**
  * Load all source options within the specified group
  */
-std::vector<std::string> Controller::loadSources(std::string group) {
+std::vector<std::string_view> Controller::loadSources(std::string group) {
   this->openSdCardIfNeeded();
   return this->listSubfolderNames(this->getGroupPath(std::move(group)));
 }
@@ -25,7 +25,7 @@ std::vector<std::string> Controller::loadSources(std::string group) {
 /**
  * Load all mod options that could be activated for the moddable source in the group
  */
-std::vector<std::string> Controller::loadMods(std::string source, std::string group) {
+std::vector<std::string_view> Controller::loadMods(std::string source, std::string group) {
   this->openSdCardIfNeeded();
   return this->listSubfolderNames(this->getSourcePath(std::move(group), std::move(source)));
 }
@@ -35,11 +35,11 @@ std::vector<std::string> Controller::loadMods(std::string source, std::string gr
  *
  * Returns an empty string if no mod is active and vanilla files are being used
  */
-std::string Controller::getActiveMod(std::string source, std::string group) {
+std::string_view Controller::getActiveMod(std::string source, std::string group) {
   this->openSdCardIfNeeded();
 
   // Open to the correct source directory
-  FsDir sourceDir = this->openDirectory(this->getSourcePath(group, source), FsDirOpenMode_ReadFiles);
+  FsDir sourceDir = this->openDirectory(this->getSourcePath(std::move(group), std::move(source)), FsDirOpenMode_ReadFiles);
 
   s64 entryCount;
   fsDirGetEntryCount(&sourceDir, &entryCount);
@@ -47,7 +47,7 @@ std::string Controller::getActiveMod(std::string source, std::string group) {
   // Find the .txt file in the directory. The name would be the active mod:
   FsDirectoryEntry entry;
   s64 readCount;
-  std::string activeMod = "";
+  std::string_view activeMod = "";
   while (R_SUCCEEDED(fsDirRead(&sourceDir, &readCount, entryCount, &entry))) {
     if (entry.type == FsDirEntryType_File) {
       std::string_view name(entry.name);
@@ -129,7 +129,7 @@ void Controller::activateMod(std::string source, std::string group, std::string 
         std::string atmospherePath = this->getAtmosphereModPath(modPath.size(), nextPath);
 
         if (this->doesFileNotExist(atmospherePath)) {
-          this->recordFile(atmospherePath, modPath, movedFilesFilePath, txtOffset);
+          this->recordFile(atmospherePath, movedFilesFilePath, txtOffset);
           this->moveFile(nextPath, atmospherePath);
         }
       // If the next entry is a folder, we will traverse within it:
@@ -158,7 +158,7 @@ void Controller::activateMod(std::string source, std::string group, std::string 
 void Controller::deactivateMod(std::string source, std::string group) {
   this->openSdCardIfNeeded();
 
-  std::string activeMod = this->getActiveMod(source, group);
+  std::string activeMod(this->getActiveMod(source, group));
 
   // Path of the txt file for the active mod:
   std::string movedFilesListPath = this->getMovedFilesListFilePath(group, source, activeMod);
@@ -246,7 +246,7 @@ void Controller::openSdCardIfNeeded() {
  */
 FsDir Controller::openDirectory(std::string path, u32 mode) {
   FsDir dir;
-  this->changeDirectory(dir, path, mode);
+  this->changeDirectory(dir, std::move(path), mode);
   return dir;
 }
 
@@ -274,10 +274,10 @@ bool Controller::doesFileNotExist(std::string path) {
 /**
  * Gets a vector of all folder names that are directly within the specified path
  */
-std::vector<std::string> Controller::listSubfolderNames(std::string path) {
-  std::vector<std::string> subfolders;
+std::vector<std::string_view> Controller::listSubfolderNames(std::string path) {
+  std::vector<std::string_view> subfolders;
 
-  FsDir dir = this->openDirectory(path, FsDirOpenMode_ReadDirs);
+  FsDir dir = this->openDirectory(std::move(path), FsDirOpenMode_ReadDirs);
 
   s64 entryCount;
   fsDirGetEntryCount(&dir, &entryCount);
@@ -302,12 +302,7 @@ std::vector<std::string> Controller::listSubfolderNames(std::string path) {
  * offset is expected to be at the end of the file,
  * and it's updated to the new position at the end of file
  */
-void Controller::recordFile(
-  std::string atmospherePath,
-  std::string modPath,
-  std::string movedFilesListPath,
-  s64& offset 
-) {
+void Controller::recordFile(std::string atmospherePath, std::string movedFilesListPath, s64& offset) {
 
   // If the file hasn't been created yet, create it:
   if (this->doesFileNotExist(movedFilesListPath)) {
@@ -323,7 +318,7 @@ void Controller::recordFile(
   }
 
   // Paths we record are delimited by new lines:
-  std::string line = atmospherePath + "\n";
+  std::string line = std::move(atmospherePath) + "\n";
 
   // Write the path to the end of the list:
   if (R_FAILED(fsFileWrite(&movedListFile, offset, line.c_str(), line.size(), FsWriteOption_Flush))) {

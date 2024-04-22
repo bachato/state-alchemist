@@ -17,7 +17,7 @@ tsl::elm::Element* GuiGroups::createUI() {   // Remove the virtual keyword
 
   auto groupList = new tsl::elm::List();
 
-  std::vector<std::string> groups = controller.loadGroups();
+  std::vector<std::string_view> groups = controller.loadGroups();
 
   // When there are no groups for some odd reason:
   if (groups.empty()) {
@@ -26,8 +26,8 @@ tsl::elm::Element* GuiGroups::createUI() {   // Remove the virtual keyword
     return frame;
   }
 
-  for (const std::string &group : groups) {
-    auto item = new tsl::elm::ListItem(group);
+  for (const std::string_view &group : groups) {
+    auto item = new tsl::elm::ListItem(std::string(group));
 
     item->setClickListener([&](u64 keys) {
       if (keys & HidNpadButton_A) {

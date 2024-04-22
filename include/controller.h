@@ -20,24 +20,24 @@ class Controller {
     /*
      * Load all groups from the game folder
      */
-    std::vector<std::string> loadGroups();
+    std::vector<std::string_view> loadGroups();
 
     /*
      * Load all source options within the specified group
      */
-    std::vector<std::string> loadSources(std::string group);
+    std::vector<std::string_view> loadSources(std::string group);
 
     /*
      * Load all mod options that could be activated for the moddable source in the group
      */
-    std::vector<std::string> loadMods(std::string source, std::string group);
+    std::vector<std::string_view> loadMods(std::string source, std::string group);
 
     /*
      * Gets the mod currently activated for the moddable source in the group
      *
      * Returns an empty string if no mod is active and vanilla files are being used
      */
-    std::string getActiveMod(std::string source, std::string group);
+    std::string_view getActiveMod(std::string source, std::string group);
 
     /*
      * Activates the specified mod, moving all its files into the atmosphere folder for the game
@@ -81,7 +81,7 @@ class Controller {
     /**
      * Gets a vector of all folder names that are directly within the specified path
      */
-    std::vector<std::string> listSubfolderNames(std::string path);
+    std::vector<std::string_view> listSubfolderNames(std::string path);
 
     /**
      * Records the atmospherePath parameter for a file being moved in modPath
@@ -90,12 +90,7 @@ class Controller {
      * offset is expected to be at the end of the file,
      * and it's updated to the new position at the end of file
      */
-    void recordFile(
-      std::string atmospherePath,
-      std::string modPath,
-      std::string movedFilesListPath,
-      s64& offset
-    );
+    void recordFile(std::string atmospherePath, std::string movedFilesListPath, s64& offset);
 
     /**
      * Changes the fromPath file parameter's location to what's specified as the toPath parameter
