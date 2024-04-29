@@ -75,8 +75,8 @@ class Controller {
      */
     void changeDirectory(FsDir& dir, const std::string& path, u32 mode);
 
-    bool Controller::doesFileExist(const std::string& path);
-    bool Controller::doesFileNotExist(const std::string& path);
+    bool doesFileExist(const std::string& path);
+    bool doesFileNotExist(const std::string& path);
 
     /**
      * Gets a vector of all folder names that are directly within the specified path

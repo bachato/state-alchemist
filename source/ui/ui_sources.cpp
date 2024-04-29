@@ -8,7 +8,7 @@ tsl::elm::Element* GuiSources::createUI() {
 
   auto groupList = new tsl::elm::List();
 
-  std::vector<std::string_view> sources = this->controller.loadSources(this->group);
+  std::vector<std::string> sources = this->controller.loadSources(this->group);
 
   // For when the group is empty for some reason:
   if (sources.empty()) {
@@ -18,7 +18,7 @@ tsl::elm::Element* GuiSources::createUI() {
   }
 
   // List all of the group's sources:
-  for (const std::string_view &source : sources) {
+  for (const std::string &source : sources) {
     auto item = new tsl::elm::ListItem(std::string(source));
 
     item->setClickListener([&](u64 keys) {
