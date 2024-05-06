@@ -6,6 +6,44 @@
 
 #include <tesla.hpp>
 
+Controller::Controller() {
+
+  // Get the title ID of the current game:
+  this->tryResult(pmdmntInitialize(), "pmDmntInit");
+  this->tryResult(pminfoInitialize(), "pmInfoInit");
+
+  u64 processId;
+  this->tryResult(pmdmntGetApplicationProcessId(&processId), "pmDmntPID");
+  this->tryResult(pminfoGetProgramId(&this->titleId, processId), "pmInfoPID");
+
+  pminfoExit();
+  pmdmntExit();
+
+  // Alternative methods to get the title ID that I probably won't use:
+
+  /*DmntCheatProcessMetadata metadata;
+  dmntchtInitialize();
+  dmntchtForceOpenCheatProcess();
+  dmntchtGetCheatProcessMetadata(&metadata);
+  this->titleId = metadata.title_id;
+  dmntchtExit();*/
+
+  /*Handle handle;
+  SmServiceName service = smEncodeName("dmnt:cht");
+  bool isTitleIdServiceRunning = R_FAILED(smRegisterService(&handle, service, false, 1));
+  svcCloseHandle(handle);
+  if (!isTitleIdServiceRunning) {
+    smUnregisterService(service);
+  } else {
+    dmntchtInitialize();
+    dmntchtForceOpenCheatProcess();
+    DmntCheatProcessMetadata metadata;
+    dmntchtGetCheatProcessMetadata(&metadata);
+    this->titleId = metadata.title_id;
+    dmntchtExit();
+  }*/
+}
+
 /**
  * Load all groups from the game folder
  */
@@ -166,16 +204,16 @@ void Controller::deactivateMod(const std::string& source, const std::string& gro
 
   // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
   FsFile movedFilesList;
-  if (R_FAILED(fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Read, &movedFilesList))) {
-    tsl::changeTo<GuiError>("Error: Failed to open file at " + movedFilesListPath);
-    abort();
-  }
+  this->tryResult(
+    fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Read, &movedFilesList),
+    "fsReadMoved"
+  );
 
   s64 fileSize;
-  if (R_FAILED(fsFileGetSize(&movedFilesList, &fileSize))) {
-    tsl::changeTo<GuiError>("Error: Failed to get file size at " + movedFilesListPath);
-    abort();
-  }
+  this->tryResult(
+    fsFileGetSize(&movedFilesList, &fileSize),
+    "fsMovedSize"
+  );
 
   // Used to stream the file a small number of bytes at a time to minimize memory consumption:
   s64 offset = 0;
@@ -189,10 +227,10 @@ void Controller::deactivateMod(const std::string& source, const std::string& gro
   while (offset < fileSize) {
 
     // Read some of the text into our buffer:
-    if (R_FAILED(fsFileRead(&movedFilesList, offset, buffer, FILE_LIST_BUFFER_SIZE, FsReadOption_None, nullptr))) {
-      tsl::changeTo<GuiError>("Error: Failed to read file at " + movedFilesListPath);
-      abort();
-    }
+    this->tryResult(
+      fsFileRead(&movedFilesList, offset, buffer, FILE_LIST_BUFFER_SIZE, FsReadOption_None, nullptr),
+      "fsReadPath"
+    );
 
     // Append it to the string we're using to build the next path:
     pathBuilder += std::string_view(buffer, FILE_LIST_BUFFER_SIZE);
@@ -241,12 +279,7 @@ void Controller::openSdCardIfNeeded() {
     }
 
     this->isSdCardOpen = true;
-    Result result;
-    result = fsOpenSdCardFileSystem(&this->sdSystem);
-    if (R_FAILED(result)) {
-        tsl::changeTo<GuiError>("Error: Failed to open SD card filesystem.");
-        abort();
-    }
+    this->tryResult(fsOpenSdCardFileSystem(&this->sdSystem), "fsOpenSD");
 }
 
 /**
@@ -264,10 +297,10 @@ FsDir Controller::openDirectory(const std::string& path, u32 mode) {
  * Changes an FsDir instance to the specified path
  */
 void Controller::changeDirectory(FsDir& dir, const std::string& path, u32 mode) {
-  if (R_FAILED(fsFsOpenDirectory(&this->sdSystem, path.c_str(), mode, &dir))) {
-    tsl::changeTo<GuiError>("Error: Failed to open directory at " + path);
-    abort();
-  }
+  this->tryResult(
+    fsFsOpenDirectory(&this->sdSystem, path.c_str(), mode, &dir),
+    "fsOpenDir"
+  );
 }
 
 bool Controller::doesFileExist(const std::string& path) {
@@ -314,24 +347,24 @@ void Controller::recordFile(const std::string& line, const std::string& movedFil
 
   // If the file hasn't been created yet, create it:
   if (this->doesFileNotExist(movedFilesListPath)) {
-    if (R_FAILED(fsFsCreateFile(&this->sdSystem, movedFilesListPath.c_str(), 0, 0))) {
-      tsl::changeTo<GuiError>("Error: Failed to create file at " + movedFilesListPath);
-      abort();
-    }
+    this->tryResult(
+      fsFsCreateFile(&this->sdSystem, movedFilesListPath.c_str(), 0, 0),
+      "fsCreateMoved"
+    );
   }
   
   // Open the file:
   FsFile movedListFile;
-  if (R_FAILED(fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Write, &movedListFile))) {
-    tsl::changeTo<GuiError>("Error: Failed to open file at " + movedFilesListPath);
-    abort();
-  }
+  this->tryResult(
+    fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Write, &movedListFile),
+    "fsWriteMoved"
+  );
 
   // Write the path to the end of the list:
-  if (R_FAILED(fsFileWrite(&movedListFile, offset, line.c_str(), line.size(), FsWriteOption_Flush))) {
-    tsl::changeTo<GuiError>("Error: Failed to write to file at " + movedFilesListPath);
-    abort();
-  }
+  this->tryResult(
+    fsFileWrite(&movedListFile, offset, line.c_str(), line.size(), FsWriteOption_Flush),
+    "fsWritePath"
+  );
   fsFileClose(&movedListFile);
 
   // Update the offset to the end of the file:
@@ -342,10 +375,10 @@ void Controller::recordFile(const std::string& line, const std::string& movedFil
  * Changes the fromPath file parameter's location to what's specified as the toPath parameter
  */
 void Controller::moveFile(const std::string& fromPath, const std::string& toPath) {
-  if (R_FAILED(fsFsRenameFile(&this->sdSystem, fromPath.c_str(), toPath.c_str()))) {
-    tsl::changeTo<GuiError>("Error: Failed to move file from " + fromPath + " to " + toPath);
-    abort();
-  }
+  this->tryResult(
+    fsFsRenameFile(&this->sdSystem, fromPath.c_str(), toPath.c_str()),
+    "fsMoveFile"
+  );
 }
 
 /*
@@ -398,4 +431,16 @@ std::string Controller::getAtmosphereModPath(std::size_t alchemistModFolderPathS
  */
 std::string Controller::getMovedFilesListFilePath(const std::string& group, const std::string& source, const std::string& mod) {
   return this->getSourcePath(group, source) + "/" + mod + TXT_EXT;
+}
+
+/**
+ * Displays an error code to the user if @param r is erroneous
+ * 
+ * @param alchemyCode: A short semi-readable unique code to indicate the origin of the error in Mod Alchemist's code
+ */
+void Controller::tryResult(const Result& r, const std::string& alchemyCode) {
+  if (R_FAILED(r)) {
+    tsl::changeTo<GuiError>("Error: " + alchemyCode + " " + std::to_string(r));
+    abort();
+  }
 }

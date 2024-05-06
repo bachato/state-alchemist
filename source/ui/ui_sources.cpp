@@ -12,14 +12,13 @@ tsl::elm::Element* GuiSources::createUI() {
 
   // For when the group is empty for some reason:
   if (sources.empty()) {
-    auto uiMessage = new tsl::elm::CategoryHeader("Group is empty");
-    frame->setContent(uiMessage);
+    frame->setContent(new tsl::elm::CategoryHeader("Group is empty"));
     return frame;
   }
 
   // List all of the group's sources:
   for (const std::string &source : sources) {
-    auto item = new tsl::elm::ListItem(std::string(source));
+    auto *item = new tsl::elm::ListItem(std::string(source));
 
     item->setClickListener([&](u64 keys) {
       if (keys & HidNpadButton_A) {

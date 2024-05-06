@@ -1,6 +1,7 @@
 #pragma once
 
 #include <switch.h>
+//#include <dmntcht.h>
 
 #include <vector>
 #include <string>
@@ -13,9 +14,7 @@ class Controller {
     bool isSdCardOpen; // Whether the SD card has been mounted or not
 
   public:
-    Controller(u64 titleId) {
-      this->titleId = titleId;
-    }
+    Controller();
 
     /*
      * Load all groups from the game folder
@@ -134,4 +133,6 @@ class Controller {
      * The file should only exist if the mod is currently active
      */
     std::string getMovedFilesListFilePath(const std::string& group, const std::string& source, const std::string& mod);
+
+    void tryResult(const Result& r, const std::string& alchemyCode);
 };

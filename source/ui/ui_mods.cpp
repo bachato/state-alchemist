@@ -11,7 +11,7 @@ tsl::elm::Element* GuiMods::createUI() {
   auto list = new tsl::elm::List();
 
   // Used to disable any active mod:
-  auto defaultToggle = new tsl::elm::ToggleListItem("Default " + this->source, activeMod == "");
+  auto *defaultToggle = new tsl::elm::ToggleListItem("Default " + this->source, activeMod == "");
   defaultToggle->setStateChangedListener([this](bool state) {
     if (state) {
       controller.deactivateMod(this->source, this->group);
@@ -24,7 +24,7 @@ tsl::elm::Element* GuiMods::createUI() {
 
   // Add a toggle for each mod:
   for (const std::string &mod : mods) {
-    auto item = new tsl::elm::ToggleListItem(mod, mod == activeMod);
+    auto *item = new tsl::elm::ToggleListItem(mod, mod == activeMod);
 
     item->setStateChangedListener([this, mod](bool state) {
       if (state) {
