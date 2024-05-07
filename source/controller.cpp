@@ -45,6 +45,14 @@ Controller::Controller() {
 }
 
 /**
+ * Checks if the currenty-running game has a folder set up for Mod Alchemist
+ */
+bool Controller::doesGameHaveFolder() {
+  this->openSdCardIfNeeded();
+  return this->doesFileExist(this->getGamePath());
+}
+
+/**
  * Load all groups from the game folder
  */
 std::vector<std::string> Controller::loadGroups() {
@@ -200,12 +208,12 @@ void Controller::deactivateMod(const std::string& source, const std::string& gro
   std::string activeMod(this->getActiveMod(source, group));
 
   // Path of the txt file for the active mod:
-  std::string movedFilesListPath = this->getMovedFilesListFilePath(group, source, activeMod);
+  const char* movedFilesListPath = this->getMovedFilesListFilePath(group, source, activeMod).c_str();
 
   // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
   FsFile movedFilesList;
   this->tryResult(
-    fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Read, &movedFilesList),
+    fsFsOpenFile(&this->sdSystem, movedFilesListPath, FsOpenMode_Read, &movedFilesList),
     "fsReadMoved"
   );
 
@@ -258,7 +266,7 @@ void Controller::deactivateMod(const std::string& source, const std::string& gro
   fsFileClose(&movedFilesList);
 
   // Once all the files have been returned, delete the txt list:
-  fsFsDeleteFile(&this->sdSystem, movedFilesListPath.c_str());
+  fsFsDeleteFile(&this->sdSystem, movedFilesListPath);
 }
 
 /**
@@ -297,16 +305,18 @@ FsDir Controller::openDirectory(const std::string& path, u32 mode) {
  * Changes an FsDir instance to the specified path
  */
 void Controller::changeDirectory(FsDir& dir, const std::string& path, u32 mode) {
+  const char* charPath = path.c_str();
   this->tryResult(
-    fsFsOpenDirectory(&this->sdSystem, path.c_str(), mode, &dir),
+    fsFsOpenDirectory(&this->sdSystem, charPath, mode, &dir),
     "fsOpenDir"
   );
 }
 
 bool Controller::doesFileExist(const std::string& path) {
   FsDir dir;
+  const char* charPath = path.c_str();
   // If the file can be opened, it exists:
-  bool exists = R_SUCCEEDED(fsFsOpenDirectory(&this->sdSystem, path.c_str(), FsDirOpenMode_ReadFiles, &dir));
+  bool exists = R_SUCCEEDED(fsFsOpenDirectory(&this->sdSystem, charPath, FsDirOpenMode_ReadFiles, &dir));
   fsDirClose(&dir);
   return exists;
 }
@@ -344,11 +354,12 @@ std::vector<std::string> Controller::listSubfolderNames(const std::string& path)
  * and it's updated to the new position at the end of file
  */
 void Controller::recordFile(const std::string& line, const std::string& movedFilesListPath, s64& offset) {
+  const char* filePath = movedFilesListPath.c_str();
 
   // If the file hasn't been created yet, create it:
   if (this->doesFileNotExist(movedFilesListPath)) {
     this->tryResult(
-      fsFsCreateFile(&this->sdSystem, movedFilesListPath.c_str(), 0, 0),
+      fsFsCreateFile(&this->sdSystem, filePath, 0, 0),
       "fsCreateMoved"
     );
   }
@@ -356,7 +367,7 @@ void Controller::recordFile(const std::string& line, const std::string& movedFil
   // Open the file:
   FsFile movedListFile;
   this->tryResult(
-    fsFsOpenFile(&this->sdSystem, movedFilesListPath.c_str(), FsOpenMode_Write, &movedListFile),
+    fsFsOpenFile(&this->sdSystem, filePath, FsOpenMode_Write, &movedListFile),
     "fsWriteMoved"
   );
 
@@ -375,8 +386,10 @@ void Controller::recordFile(const std::string& line, const std::string& movedFil
  * Changes the fromPath file parameter's location to what's specified as the toPath parameter
  */
 void Controller::moveFile(const std::string& fromPath, const std::string& toPath) {
+  const char* fromChars = fromPath.c_str();
+  const char* toChars = toPath.c_str();
   this->tryResult(
-    fsFsRenameFile(&this->sdSystem, fromPath.c_str(), toPath.c_str()),
+    fsFsRenameFile(&this->sdSystem, fromChars, toChars),
     "fsMoveFile"
   );
 }
@@ -440,7 +453,8 @@ std::string Controller::getMovedFilesListFilePath(const std::string& group, cons
  */
 void Controller::tryResult(const Result& r, const std::string& alchemyCode) {
   if (R_FAILED(r)) {
-    tsl::changeTo<GuiError>("Error: " + alchemyCode + " " + std::to_string(r));
-    abort();
+    fatalThrow(r);
+    //tsl::changeTo<GuiError>("Error: " + alchemyCode + " " + std::to_string(r));
+    //abort();
   }
 }

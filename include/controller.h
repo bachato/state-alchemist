@@ -10,11 +10,14 @@
 class Controller {
   private:
     FsFileSystem sdSystem;
-    u64 titleId; // The current Game's Title ID
     bool isSdCardOpen; // Whether the SD card has been mounted or not
 
   public:
+    u64 titleId; // The current Game's Title ID
+
     Controller();
+
+    bool doesGameHaveFolder();
 
     /*
      * Load all groups from the game folder

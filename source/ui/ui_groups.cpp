@@ -2,6 +2,8 @@
 #include "ui/ui_sources.h"
 #include "controller.h"
 
+#include "../constants.cpp"
+
 GuiGroups::GuiGroups() { }
 
 tsl::elm::Element* GuiGroups::createUI() {   // Remove the virtual keyword
@@ -10,6 +12,14 @@ tsl::elm::Element* GuiGroups::createUI() {   // Remove the virtual keyword
   auto groupList = new tsl::elm::List();
 
   Controller controller = Controller();
+
+  if (!controller.doesGameHaveFolder()) {
+    frame->setContent(new tsl::elm::CategoryHeader(
+      "The running game has no folder. It should be named \"" + std::to_string(controller.titleId) +
+      "\" in the \"" + ALCHEMIST_PATH + "\" directory."
+    ));
+    return frame;
+  }
 
   std::vector<std::string> groups = controller.loadGroups();
 
@@ -33,7 +43,7 @@ tsl::elm::Element* GuiGroups::createUI() {   // Remove the virtual keyword
     groupList->addItem(item);
   }
   
-  frame->setContent(new tsl::elm::CategoryHeader("Yo gud"));
+  frame->setContent(groupList);
   return frame;
 }
 
