@@ -1,7 +1,6 @@
 #pragma once
 
 #include <switch.h>
-//#include <dmntcht.h>
 
 #include <vector>
 #include <string>
@@ -10,7 +9,6 @@
 class Controller {
   private:
     FsFileSystem sdSystem;
-    bool isSdCardOpen; // Whether the SD card has been mounted or not
 
   public:
     u64 titleId; // The current Game's Title ID
@@ -57,13 +55,6 @@ class Controller {
     ~Controller();
 
   private:
-
-    /**
-     * Mounts the SD card if it hasn't been mounted yet
-     * 
-     * We need to be sure this always runs before attempting to perform any file operations 
-     */
-    void openSdCardIfNeeded();
 
     /**
      * Creates a new open FsDir object for the specified path

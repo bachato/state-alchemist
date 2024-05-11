@@ -6,7 +6,7 @@
 
 GuiGroups::GuiGroups() { }
 
-tsl::elm::Element* GuiGroups::createUI() {   // Remove the virtual keyword
+tsl::elm::Element* GuiGroups::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
   auto groupList = new tsl::elm::List();

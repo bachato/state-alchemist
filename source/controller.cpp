@@ -8,47 +8,18 @@
 
 Controller::Controller() {
 
-  // Get the title ID of the current game:
-  this->tryResult(pmdmntInitialize(), "pmDmntInit");
-  this->tryResult(pminfoInitialize(), "pmInfoInit");
-
+  // Get the title ID of the currently running game:
   u64 processId;
   this->tryResult(pmdmntGetApplicationProcessId(&processId), "pmDmntPID");
   this->tryResult(pminfoGetProgramId(&this->titleId, processId), "pmInfoPID");
 
-  pminfoExit();
-  pmdmntExit();
-
-  // Alternative methods to get the title ID that I probably won't use:
-
-  /*DmntCheatProcessMetadata metadata;
-  dmntchtInitialize();
-  dmntchtForceOpenCheatProcess();
-  dmntchtGetCheatProcessMetadata(&metadata);
-  this->titleId = metadata.title_id;
-  dmntchtExit();*/
-
-  /*Handle handle;
-  SmServiceName service = smEncodeName("dmnt:cht");
-  bool isTitleIdServiceRunning = R_FAILED(smRegisterService(&handle, service, false, 1));
-  svcCloseHandle(handle);
-  if (!isTitleIdServiceRunning) {
-    smUnregisterService(service);
-  } else {
-    dmntchtInitialize();
-    dmntchtForceOpenCheatProcess();
-    DmntCheatProcessMetadata metadata;
-    dmntchtGetCheatProcessMetadata(&metadata);
-    this->titleId = metadata.title_id;
-    dmntchtExit();
-  }*/
+  this->tryResult(fsOpenSdCardFileSystem(&this->sdSystem), "fsOpenSD");
 }
 
 /**
  * Checks if the currenty-running game has a folder set up for Mod Alchemist
  */
 bool Controller::doesGameHaveFolder() {
-  this->openSdCardIfNeeded();
   return this->doesFileExist(this->getGamePath());
 }
 
@@ -56,7 +27,6 @@ bool Controller::doesGameHaveFolder() {
  * Load all groups from the game folder
  */
 std::vector<std::string> Controller::loadGroups() {
-  this->openSdCardIfNeeded();
   return this->listSubfolderNames(this->getGamePath());
 }
 
@@ -64,7 +34,6 @@ std::vector<std::string> Controller::loadGroups() {
  * Load all source options within the specified group
  */
 std::vector<std::string> Controller::loadSources(const std::string& group) {
-  this->openSdCardIfNeeded();
   return this->listSubfolderNames(this->getGroupPath(group));
 }
 
@@ -72,7 +41,6 @@ std::vector<std::string> Controller::loadSources(const std::string& group) {
  * Load all mod options that could be activated for the moddable source in the group
  */
 std::vector<std::string> Controller::loadMods(const std::string& source, const std::string& group) {
-  this->openSdCardIfNeeded();
   return this->listSubfolderNames(this->getSourcePath(group, source));
 }
 
@@ -82,8 +50,6 @@ std::vector<std::string> Controller::loadMods(const std::string& source, const s
  * Returns an empty string if no mod is active and vanilla files are being used
  */
 std::string_view Controller::getActiveMod(const std::string& source, const std::string& group) {
-  this->openSdCardIfNeeded();
-
   // Open to the correct source directory
   FsDir sourceDir = this->openDirectory(this->getSourcePath(group, source), FsDirOpenMode_ReadFiles);
 
@@ -112,8 +78,6 @@ std::string_view Controller::getActiveMod(const std::string& source, const std::
  * Make sure to deactivate any existing active mod for this source if there is one
  */
 void Controller::activateMod(const std::string& source, const std::string& group, const std::string& mod) {
-  this->openSdCardIfNeeded();
-
   // Path to the "mod" folder in alchemy's directory:
   std::string modPath = this->getModPath(group, source, mod);
   // Path of the txt file for the active mod:
@@ -203,8 +167,6 @@ void Controller::activateMod(const std::string& source, const std::string& group
  * Deactivates the currently active mod, restoring the moddable source to its vanilla state
  */
 void Controller::deactivateMod(const std::string& source, const std::string& group) {
-  this->openSdCardIfNeeded();
-
   std::string activeMod(this->getActiveMod(source, group));
 
   // Path of the txt file for the active mod:
@@ -273,21 +235,7 @@ void Controller::deactivateMod(const std::string& source, const std::string& gro
  * Unmount SD card when destroyed 
  */
 Controller::~Controller() {
-  if (this->isSdCardOpen) {
-    fsFsClose(&this->sdSystem);
-  }
-}
-
-/*
- * Mounts the SD card if it hasn't been mounted yet
- */
-void Controller::openSdCardIfNeeded() {
-    if (this->isSdCardOpen) {
-        return;
-    }
-
-    this->isSdCardOpen = true;
-    this->tryResult(fsOpenSdCardFileSystem(&this->sdSystem), "fsOpenSD");
+  fsFsClose(&this->sdSystem);
 }
 
 /**
