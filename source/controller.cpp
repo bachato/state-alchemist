@@ -139,7 +139,7 @@ void Controller::activateMod(const std::string& source, const std::string& group
       if (entry.type == FsDirEntryType_File) {
         nextAtmoPath = this->getAtmosphereModPath(modPath.size(), nextPath);
 
-        if (this->doesFileNotExist(nextAtmoPath)) {
+        if (!this->doesFileExist(nextAtmoPath)) {
           this->recordFile(nextAtmoPath + "\n", movedFilesFilePath, txtOffset);
           this->moveFile(nextPath, nextAtmoPath);
         }
@@ -269,10 +269,6 @@ bool Controller::doesFileExist(const std::string& path) {
   return exists;
 }
 
-bool Controller::doesFileNotExist(const std::string& path) {
-  return !this->doesFileExist(path);
-}
-
 /**
  * Gets a vector of all folder names that are directly within the specified path
  */
@@ -305,7 +301,7 @@ void Controller::recordFile(const std::string& line, const std::string& movedFil
   const char* filePath = movedFilesListPath.c_str();
 
   // If the file hasn't been created yet, create it:
-  if (this->doesFileNotExist(movedFilesListPath)) {
+  if (!this->doesFileExist(movedFilesListPath)) {
     this->tryResult(
       fsFsCreateFile(&this->sdSystem, filePath, 0, 0),
       "fsCreateMoved"

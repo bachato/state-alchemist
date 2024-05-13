@@ -9,15 +9,14 @@ GuiGroups::GuiGroups() { }
 tsl::elm::Element* GuiGroups::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
-  auto groupList = new tsl::elm::List();
+  auto list = new tsl::elm::List();
 
   Controller controller = Controller();
 
   if (!controller.doesGameHaveFolder()) {
-    frame->setContent(new tsl::elm::CategoryHeader(
-      "The running game has no folder. It should be named \"" + std::to_string(controller.titleId) +
-      "\" in the \"" + ALCHEMIST_PATH + "\" directory."
-    ));
+    list->addItem(new tsl::elm::ListItem("The running game has no folder."));
+    list->addItem(new tsl::elm::ListItem("It should be named \"" + std::to_string(controller.titleId) + "\""));
+    list->addItem(new tsl::elm::ListItem("And located in the \"" + ALCHEMIST_PATH + "\" directory."));
     return frame;
   }
 
@@ -40,10 +39,10 @@ tsl::elm::Element* GuiGroups::createUI() {
       return false;
     });
 
-    groupList->addItem(item);
+    list->addItem(item);
   }
   
-  frame->setContent(groupList);
+  frame->setContent(list);
   return frame;
 }
 
