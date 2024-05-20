@@ -17,6 +17,7 @@ tsl::elm::Element* GuiGroups::createUI() {
     list->addItem(new tsl::elm::ListItem("The running game has no folder."));
     list->addItem(new tsl::elm::ListItem("It should be named \"" + std::to_string(controller.titleId) + "\""));
     list->addItem(new tsl::elm::ListItem("And located in the \"" + ALCHEMIST_PATH + "\" directory."));
+    frame->setContent(list);
     return frame;
   }
 

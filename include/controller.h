@@ -127,5 +127,7 @@ class Controller {
      */
     std::string getMovedFilesListFilePath(const std::string& group, const std::string& source, const std::string& mod);
 
+    char* toPathBuffer(const std::string& path);
+
     void tryResult(const Result& r, const std::string& alchemyCode);
 };
