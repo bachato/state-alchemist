@@ -11,7 +11,7 @@ tsl::elm::Element* GuiGroups::createUI() {
 
   auto list = new tsl::elm::List();
 
-  Controller controller = Controller();
+  controller.init();
 
   if (!controller.doesGameHaveFolder()) {
     list->addItem(new tsl::elm::ListItem("The running game has no folder."));
@@ -34,7 +34,8 @@ tsl::elm::Element* GuiGroups::createUI() {
 
     item->setClickListener([&](u64 keys) {
       if (keys & HidNpadButton_A) {
-        tsl::changeTo<GuiSources>(controller, group);
+        controller.group = group;
+        tsl::changeTo<GuiSources>();
         return true;
       }
       return false;

@@ -1,20 +1,24 @@
 #include "ui/ui_mods.h"
 
-GuiMods::GuiMods(Controller& controller_, const std::string& source_, const std::string& group_) : controller(controller_), source(source_), group(group_) { }
+#include <string>
+
+#include "controller.h"
+
+GuiMods::GuiMods() { }
 
 tsl::elm::Element* GuiMods::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", this->source);
+  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.source);
 
-  std::vector<std::string> mods = controller.loadMods(this->source, this->group);
-  std::string_view activeMod = controller.getActiveMod(this->source, this->group);
+  std::vector<std::string> mods = controller.loadMods();
+  std::string_view activeMod = controller.getActiveMod();
 
   auto list = new tsl::elm::List();
 
   // Used to disable any active mod:
-  auto *defaultToggle = new tsl::elm::ToggleListItem("Default " + this->source, activeMod == "");
+  auto *defaultToggle = new tsl::elm::ToggleListItem("Default " + controller.source, activeMod == "");
   defaultToggle->setStateChangedListener([this](bool state) {
     if (state) {
-      controller.deactivateMod(this->source, this->group);
+      controller.deactivateMod();
     }
   });
 
@@ -28,11 +32,11 @@ tsl::elm::Element* GuiMods::createUI() {
 
     item->setStateChangedListener([this, mod](bool state) {
       if (state) {
-        controller.deactivateMod(this->source, this->group);
-        controller.activateMod(this->source, this->group, mod);
+        controller.deactivateMod();
+        controller.activateMod(mod);
       } else {
         this->toggles[0]->setState(true);
-        controller.deactivateMod(this->source, this->group);
+        controller.deactivateMod();
       }
     });
 
@@ -52,6 +56,7 @@ bool GuiMods::handleInput(
   HidAnalogStickState joyStickPosRight
 ) {
   if (keysDown & HidNpadButton_B) {
+    controller.source = "";
     tsl::goBack();
     return true;
   }

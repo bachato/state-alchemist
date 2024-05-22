@@ -6,7 +6,9 @@
 
 #include <tesla.hpp>
 
-Controller::Controller() {
+Controller controller;
+
+void Controller::init() {
 
   // Get the title ID of the currently running game:
   u64 processId;
@@ -32,32 +34,41 @@ std::vector<std::string> Controller::loadGroups() {
 
 /**
  * Load all source options within the specified group
+ * 
+ * @requirement: group must be set
  */
-std::vector<std::string> Controller::loadSources(const std::string& group) {
-  return this->listSubfolderNames(this->getGroupPath(group));
+std::vector<std::string> Controller::loadSources() {
+  return this->listSubfolderNames(this->getGroupPath());
 }
 
 /**
  * Load all mod options that could be activated for the moddable source in the group
+ * 
+ * @requirement: group and source must be set
  */
-std::vector<std::string> Controller::loadMods(const std::string& source, const std::string& group) {
-  return this->listSubfolderNames(this->getSourcePath(group, source));
+std::vector<std::string> Controller::loadMods() {
+  return this->listSubfolderNames(this->getSourcePath());
 }
 
 /**
  * Gets the mod currently activated for the moddable source in the group
  *
  * Returns an empty string if no mod is active and vanilla files are being used
+ * 
+ * @requirement: group and source must be set
  */
-std::string_view Controller::getActiveMod(const std::string& source, const std::string& group) {
+std::string_view Controller::getActiveMod() {
+
   // Open to the correct source directory
-  FsDir sourceDir = this->openDirectory(this->getSourcePath(group, source), FsDirOpenMode_ReadFiles);
+  FsDir sourceDir = this->openDirectory(this->getSourcePath(), FsDirOpenMode_ReadFiles);
 
   // Find the .txt file in the directory. The name would be the active mod:
   FsDirectoryEntry entry;
   s64 total;
+  fsDirGetEntryCount(&sourceDir, &total);
   std::string_view activeMod = "";
   std::string_view name;
+
   for (s64 i = 0; i < total; i++) {
     if (R_SUCCEEDED(fsDirRead(&sourceDir, &total, 1, &entry))) {
       if (entry.type == FsDirEntryType_File) {
@@ -78,12 +89,14 @@ std::string_view Controller::getActiveMod(const std::string& source, const std::
  * Activates the specified mod, moving all its files into the atmosphere folder for the game
  * 
  * Make sure to deactivate any existing active mod for this source if there is one
+ * 
+ * @requirement: group and source must be set
  */
-void Controller::activateMod(const std::string& source, const std::string& group, const std::string& mod) {
+void Controller::activateMod(const std::string& mod) {
   // Path to the "mod" folder in alchemy's directory:
-  std::string modPath = this->getModPath(group, source, mod);
+  std::string modPath = this->getModPath(mod);
   // Path of the txt file for the active mod:
-  std::string movedFilesFilePath = this->getMovedFilesListFilePath(group, source, mod);
+  std::string movedFilesFilePath = this->getMovedFilesListFilePath(mod);
 
   FsDir dir = this->openDirectory(modPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
@@ -163,16 +176,18 @@ void Controller::activateMod(const std::string& source, const std::string& group
 
 /**
  * Deactivates the currently active mod, restoring the moddable source to its vanilla state
+ * 
+ * @requirement: group and source must be set
  */
-void Controller::deactivateMod(const std::string& source, const std::string& group) {
-  std::string activeMod(this->getActiveMod(source, group));
+void Controller::deactivateMod() {
+  std::string activeMod(this->getActiveMod());
 
   // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
   FsFile movedFilesList;
   this->tryResult(
     fsFsOpenFile(
       &this->sdSystem,
-      this->toPathBuffer(this->getMovedFilesListFilePath(group, source, activeMod)),
+      this->toPathBuffer(this->getMovedFilesListFilePath(activeMod)),
       FsOpenMode_Read,
       &movedFilesList
     ),
@@ -215,7 +230,7 @@ void Controller::deactivateMod(const std::string& source, const std::string& gro
       pathBuilder = pathBuilder.substr(newLinePos + 1);
 
       // The file's original location can be built by replacing the atmosphere portion of the path with alchemy's portion:
-      alchemyPath = this->getModPath(group, source, activeMod) + atmoPath.substr(this->getAtmospherePath().size());
+      alchemyPath = this->getModPath(activeMod) + atmoPath.substr(this->getAtmospherePath().size());
 
       this->moveFile(atmoPath, alchemyPath);
     }
@@ -228,7 +243,7 @@ void Controller::deactivateMod(const std::string& source, const std::string& gro
   fsFileClose(&movedFilesList);
 
   // Once all the files have been returned, delete the txt list:
-  fsFsDeleteFile(&this->sdSystem, this->toPathBuffer(this->getMovedFilesListFilePath(group, source, activeMod)));
+  fsFsDeleteFile(&this->sdSystem, this->toPathBuffer(this->getMovedFilesListFilePath(activeMod)));
 }
 
 /**
@@ -276,9 +291,11 @@ std::vector<std::string> Controller::listSubfolderNames(const std::string& path)
   FsDir dir = this->openDirectory(path, FsDirOpenMode_ReadDirs);
 
   FsDirectoryEntry entry;
-  s64 folderCount;
-  for (s64 i = 0; i < folderCount; i++) {
-    if (R_SUCCEEDED(fsDirRead(&dir, &folderCount, 1, &entry))) {
+  s64 entryCount;
+  fsDirGetEntryCount(&dir, &entryCount);
+
+  for (s64 i = 0; i < entryCount; i++) {
+    if (R_SUCCEEDED(fsDirRead(&dir, &entryCount, 1, &entry))) {
       if (entry.type == FsDirEntryType_Dir) {
         subfolders.push_back(entry.name);
       }
@@ -344,23 +361,29 @@ std::string Controller::getGamePath() {
 
 /*
  * Gets the file path for the specified group
+ * 
+ * @requirement: group must be set
  */
-std::string Controller::getGroupPath(const std::string& group) {
-  return this->getGamePath() + "/" + group;
+std::string Controller::getGroupPath() {
+  return this->getGamePath() + "/" + this->group;
 }
 
 /*
  * Gets the file path for the specified source within the group
+ * 
+ * @requirement: group and source must be set
  */
-std::string Controller::getSourcePath(const std::string& group, const std::string& source) {
-  return this->getGroupPath(group) + "/" + source;
+std::string Controller::getSourcePath() {
+  return this->getGroupPath() + "/" + this->source;
 }
 
 /*
  * Get the file path for the specified mod within the moddable source
+ * 
+ * @requirement: group and source must be set
  */
-std::string Controller::getModPath(const std::string& group, const std::string& source, const std::string& mod) {
-  return this->getSourcePath(group, source) + "/" + mod;
+std::string Controller::getModPath(const std::string& mod) {
+  return this->getSourcePath() + "/" + mod;
 }
 
 /**
@@ -382,9 +405,11 @@ std::string Controller::getAtmosphereModPath(std::size_t alchemistModFolderPathS
  * Gets the file path for the list of moved files for the specified mod
  * 
  * The file should only exist if the mod is currently active
+ * 
+ * @requirement: group and source must be set
  */
-std::string Controller::getMovedFilesListFilePath(const std::string& group, const std::string& source, const std::string& mod) {
-  return this->getSourcePath(group, source) + "/" + mod + TXT_EXT;
+std::string Controller::getMovedFilesListFilePath(const std::string& mod) {
+  return this->getSourcePath() + "/" + mod + TXT_EXT;
 }
 
 char* Controller::toPathBuffer(const std::string& path) {

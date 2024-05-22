@@ -1,19 +1,11 @@
 #ifndef UI_SOURCES_H
 #define UI_SOURCES_H
 
-#include <string>
-#include <vector>
-
 #include <tesla.hpp>
-#include "../controller.h"
 
 class GuiSources : public tsl::Gui {
-  private:
-    Controller controller;
-    std::string group;
-
   public:
-    GuiSources(Controller& controller_, const std::string& group_);
+    GuiSources();
 
     virtual tsl::elm::Element* createUI() override;
 

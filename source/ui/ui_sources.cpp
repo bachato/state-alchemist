@@ -1,14 +1,19 @@
 #include "ui/ui_sources.h"
 #include "ui/ui_mods.h"
 
-GuiSources::GuiSources(Controller& controller_, const std::string& group_) : controller(controller_), group(group_) { }
+#include <string>
+#include <vector>
+
+#include "controller.h"
+
+GuiSources::GuiSources() {}
 
 tsl::elm::Element* GuiSources::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", this->group);
+  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.group);
 
   auto groupList = new tsl::elm::List();
 
-  std::vector<std::string> sources = this->controller.loadSources(this->group);
+  std::vector<std::string> sources = controller.loadSources();
 
   // For when the group is empty for some reason:
   if (sources.empty()) {
@@ -18,11 +23,12 @@ tsl::elm::Element* GuiSources::createUI() {
 
   // List all of the group's sources:
   for (const std::string &source : sources) {
-    auto *item = new tsl::elm::ListItem(std::string(source));
+    auto *item = new tsl::elm::ListItem(source);
 
     item->setClickListener([&](u64 keys) {
       if (keys & HidNpadButton_A) {
-        tsl::changeTo<GuiMods>(controller, source, group); // Use the GuiMods class to navigate to the mods UI
+        controller.source = source;
+        tsl::changeTo<GuiMods>(); // Use the GuiMods class to navigate to the mods UI
         return true;
       }
       return false;
@@ -43,6 +49,7 @@ bool GuiSources::handleInput(
   HidAnalogStickState joyStickPosRight
 ) {
   if (keysDown & HidNpadButton_B) {
+    controller.group = "";
     tsl::goBack();
     return true;
   }

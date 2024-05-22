@@ -12,8 +12,10 @@ class Controller {
 
   public:
     u64 titleId; // The current Game's Title ID
+    std::string group;
+    std::string source;
 
-    Controller();
+    void init();
 
     bool doesGameHaveFolder();
 
@@ -25,29 +27,29 @@ class Controller {
     /*
      * Load all source options within the specified group
      */
-    std::vector<std::string> loadSources(const std::string& group);
+    std::vector<std::string> loadSources();
 
     /*
      * Load all mod options that could be activated for the moddable source in the group
      */
-    std::vector<std::string> loadMods(const std::string& source, const std::string& group);
+    std::vector<std::string> loadMods();
 
     /*
      * Gets the mod currently activated for the moddable source in the group
      *
      * Returns an empty string if no mod is active and vanilla files are being used
      */
-    std::string_view getActiveMod(const std::string& source, const std::string& group);
+    std::string_view getActiveMod();
 
     /*
      * Activates the specified mod, moving all its files into the atmosphere folder for the game
      */
-    void activateMod(const std::string& source, const std::string& group, const std::string& mod);
+    void activateMod(const std::string& mod);
 
     /**
      * Deactivates the currently active mod, restoring the moddable source to its vanilla state
      */
-    void deactivateMod(const std::string& source, const std::string& group);
+    void deactivateMod();
 
     /**
      * Unmount SD card when destroyed 
@@ -97,17 +99,17 @@ class Controller {
     /**
      * Gets the file path for the specified group
      */
-    std::string getGroupPath(const std::string& group);
+    std::string getGroupPath();
 
     /**
      * Gets the file path for the specified source within the group
      */
-    std::string getSourcePath(const std::string& group, const std::string& source);
+    std::string getSourcePath();
 
     /**
      * Get the file path for the specified mod within the moddable source
      */
-    std::string getModPath(const std::string& group, const std::string& source, const std::string& mod);
+    std::string getModPath(const std::string& mod);
 
     /**
      * Gets the game's path that's stored within Atmosphere's directory
@@ -125,9 +127,11 @@ class Controller {
      * 
      * The file should only exist if the mod is currently active
      */
-    std::string getMovedFilesListFilePath(const std::string& group, const std::string& source, const std::string& mod);
+    std::string getMovedFilesListFilePath(const std::string& mod);
 
     char* toPathBuffer(const std::string& path);
 
     void tryResult(const Result& r, const std::string& alchemyCode);
 };
+
+extern Controller controller;
