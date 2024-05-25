@@ -1,6 +1,5 @@
 #include "controller.h"
-
-#include "constants.cpp"
+#include "constants.h"
 
 #include "ui/ui_error.h"
 

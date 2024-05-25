@@ -1,8 +1,7 @@
 #include "ui/ui_groups.h"
 #include "ui/ui_sources.h"
 #include "controller.h"
-
-#include "../constants.cpp"
+#include "constants.h"
 
 GuiGroups::GuiGroups() { }
 
