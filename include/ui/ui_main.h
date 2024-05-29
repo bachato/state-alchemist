@@ -1,17 +1,15 @@
-#ifndef GUI_GROUPS_HPP
-#define GUI_GROUPS_HPP
-
-#include <string>
-#include <vector>
+#pragma once
 
 #include <tesla.hpp>    // The Tesla Header
 
-class GuiGroups : public tsl::Gui {
-  public:
-    GuiGroups();
+class GuiMain : public tsl::Gui {
+public:
+    GuiMain();
 
+    // Called when this Gui gets loaded to create the UI
     virtual tsl::elm::Element* createUI() override;
 
+    // Called once every frame to handle inputs not handled by other UI elements
     virtual bool handleInput(
       u64 keysDown,
       u64 keysHeld,
@@ -20,5 +18,3 @@ class GuiGroups : public tsl::Gui {
       HidAnalogStickState joyStickPosRight
     ) override;
 };
-
-#endif // GUI_GROUPS_HPP

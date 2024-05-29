@@ -25,30 +25,19 @@ bool Controller::doesGameHaveFolder() {
 }
 
 /**
- * Load all groups and sources from the game folder
- * Key: Group
- * Value: Sources
+ * Load all groups from the game folder
  */
-std::map<std::string, std::vector<std::string>> Controller::loadGroups() {
-  std::map<std::string, std::vector<std::string>> groups;
+std::vector<std::string> Controller::loadGroups() {
+  return this->listSubfolderNames(this->getGamePath());
+}
 
-  FsDir dir = this->openDirectory(this->getGamePath(), FsDirOpenMode_ReadDirs);
-
-  FsDirectoryEntry entry;
-  s64 entryCount;
-  fsDirGetEntryCount(&dir, &entryCount);
-
-  for (s64 i = 0; i < entryCount; i++) {
-    if (R_SUCCEEDED(fsDirRead(&dir, &entryCount, 1, &entry))) {
-      if (entry.type == FsDirEntryType_Dir) {
-        std::string entryName = entry.name;
-        std::vector<std::string> sources = this->listSubfolderNames(this->getGroupPath(entryName));
-        groups[entryName] = sources;
-      }
-    }
-  }
-
-  return groups;
+/**
+ * Load all source options within the specified group
+ * 
+ * @requirement: group must be set
+ */
+std::vector<std::string> Controller::loadSources() {
+  return this->listSubfolderNames(this->getGroupPath());
 }
 
 /**
@@ -371,9 +360,11 @@ std::string Controller::getGamePath() {
 
 /*
  * Gets the file path for the specified group
+ * 
+ * @requirement: group must be set
  */
-std::string Controller::getGroupPath(std::string& group) {
-  return this->getGamePath() + "/" + group;
+std::string Controller::getGroupPath() {
+  return this->getGamePath() + "/" + this->group;
 }
 
 /*
@@ -382,7 +373,7 @@ std::string Controller::getGroupPath(std::string& group) {
  * @requirement: group and source must be set
  */
 std::string Controller::getSourcePath() {
-  return this->getGroupPath(this->group) + "/" + this->source;
+  return this->getGroupPath() + "/" + this->source;
 }
 
 /*

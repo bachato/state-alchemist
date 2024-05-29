@@ -1,14 +1,11 @@
-#ifndef GUI_GROUPS_HPP
-#define GUI_GROUPS_HPP
+#ifndef UI_SOURCES_H
+#define UI_SOURCES_H
 
-#include <string>
-#include <vector>
+#include <tesla.hpp>
 
-#include <tesla.hpp>    // The Tesla Header
-
-class GuiGroups : public tsl::Gui {
+class GuiSources : public tsl::Gui {
   public:
-    GuiGroups();
+    GuiSources();
 
     virtual tsl::elm::Element* createUI() override;
 
@@ -21,4 +18,5 @@ class GuiGroups : public tsl::Gui {
     ) override;
 };
 
-#endif // GUI_GROUPS_HPP
+#endif // UI_SOURCES_H
+

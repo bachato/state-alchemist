@@ -1,5 +1,5 @@
 #include "ui/ui_groups.h"
-#include "ui/ui_mods.h"
+#include "ui/ui_sources.h"
 #include "controller.h"
 #include "constants.h"
 
@@ -20,32 +20,27 @@ tsl::elm::Element* GuiGroups::createUI() {
     return frame;
   }
 
-  std::map<std::string, std::vector<std::string>> groupMap = controller.loadGroups();
+  std::vector<std::string> groups = controller.loadGroups();
 
   // When there are no groups for some odd reason:
-  if (groupMap.empty()) {
+  if (groups.empty()) {
     frame->setContent(new tsl::elm::CategoryHeader("No groups found"));
     return frame;
   }
 
-  for (const auto& entry : groupMap) {
-    list->addItem(new tsl::elm::CategoryHeader(entry.first));
+  for (const std::string &group : groups) {
+    auto *item = new tsl::elm::ListItem(group);
 
-    for (const std::string &source : entry.second) {
-      auto *item = new tsl::elm::ListItem(source);
+    item->setClickListener([&](u64 keys) {
+      if (keys & HidNpadButton_A) {
+        controller.group = group;
+        tsl::changeTo<GuiSources>();
+        return true;
+      }
+      return false;
+    });
 
-      item->setClickListener([&](u64 keys) {
-        if (keys & HidNpadButton_A) {
-          controller.group = entry.first;
-          controller.source = source;
-          tsl::changeTo<GuiMods>();
-          return true;
-        }
-        return false;
-      });
-
-      list->addItem(item);
-    }
+    list->addItem(item);
   }
   
   frame->setContent(list);
