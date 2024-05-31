@@ -25,7 +25,7 @@ tsl::elm::Element* GuiSources::createUI() {
   for (const std::string &source : sources) {
     auto *item = new tsl::elm::ListItem(source);
 
-    item->setClickListener([&](u64 keys) {
+    item->setClickListener([source](u64 keys) {
       if (keys & HidNpadButton_A) {
         controller.source = source;
         tsl::changeTo<GuiMods>(); // Use the GuiMods class to navigate to the mods UI

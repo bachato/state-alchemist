@@ -31,7 +31,7 @@ tsl::elm::Element* GuiGroups::createUI() {
   for (const std::string &group : groups) {
     auto *item = new tsl::elm::ListItem(group);
 
-    item->setClickListener([&](u64 keys) {
+    item->setClickListener([group](u64 keys) {
       if (keys & HidNpadButton_A) {
         controller.group = group;
         tsl::changeTo<GuiSources>();
