@@ -63,22 +63,20 @@ std::string_view Controller::getActiveMod() {
 
   // Find the .txt file in the directory. The name would be the active mod:
   FsDirectoryEntry entry;
-  s64 total;
-  fsDirGetEntryCount(&sourceDir, &total);
+  s64 count = 0;
   std::string_view activeMod = "";
   std::string_view name;
 
-  for (s64 i = 0; i < total; i++) {
-    if (R_SUCCEEDED(fsDirRead(&sourceDir, &total, 1, &entry))) {
-      if (entry.type == FsDirEntryType_File) {
-        name = entry.name;
-        if (name.find(TXT_EXT) != std::string::npos) {
-          activeMod = name.substr(0, name.size() - TXT_EXT.size());
-          break;
-        }
+  while (R_SUCCEEDED(fsDirRead(&sourceDir, &count, 1, &entry)) && count) {
+    if (entry.type == FsDirEntryType_File) {
+      name = entry.name;
+      if (name.find(TXT_EXT) != std::string::npos) {
+        activeMod = name.substr(0, name.size() - TXT_EXT.size());
+        break;
       }
     }
   }
+
   fsDirClose(&sourceDir);
 
   return activeMod;
@@ -99,8 +97,9 @@ void Controller::activateMod(const std::string& mod) {
 
   FsDir dir = this->openDirectory(modPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
-  // Used for "storing" the where the iteration left off at when traversing deeper into the hierarchy:
+  // Used for "storing" where the iteration left off at when traversing deeper into the hierarchy:
   std::vector<u64> counts;
+  std::vector<s64> totals;
 
   // The directory we are currently at:
   std::string currentDirectory = modPath;
@@ -109,8 +108,8 @@ void Controller::activateMod(const std::string& mod) {
   s64 txtOffset = 0;
 
   // Counts for entries of currentDirectory:
+  s64 currentCount = 0;
   s64 currentTotal = 0;
-  s64 i = 0;
   fsDirGetEntryCount(&dir, &currentTotal);
 
   FsDirectoryEntry entry;
@@ -124,7 +123,7 @@ void Controller::activateMod(const std::string& mod) {
   while (!isDone) {
 
     // If we have analyzed all entries in the current directory, navigate back up to where we left off in the parent:
-    if (i == currentTotal) {
+    if (currentCount == currentTotal) {
 
       // If there's nothing left in our count storage, we've navigated everything, so we're done:
       if (counts.size() == 0) {
@@ -132,8 +131,10 @@ void Controller::activateMod(const std::string& mod) {
         break;
       } else {
         // Otherwise, let's get back the count data of where we left off in the parent:
-        i = counts.back();
+        currentCount = counts.back();
+        currentTotal = totals.back();
         counts.pop_back();
+        totals.pop_back();
 
         // Remove the string portion after the last '/' to get the parent's path:
         std::size_t lastSlashIndex = currentDirectory.rfind('/');
@@ -142,7 +143,7 @@ void Controller::activateMod(const std::string& mod) {
       }
     }
 
-    if (R_SUCCEEDED(fsDirRead(&dir, &currentTotal, 1, &entry))) {
+    if (R_SUCCEEDED(fsDirRead(&dir, &currentCount, 1, &entry))) {
 
       nextAlchPath = currentDirectory + "/" + entry.name;
 
@@ -158,14 +159,15 @@ void Controller::activateMod(const std::string& mod) {
       } else if (entry.type == FsDirEntryType_Dir) {
 
         // Add the current counts to the storage:
-        counts.push_back(i);
+        counts.push_back(currentCount);
+        totals.push_back(currentTotal);
 
         currentDirectory = nextAlchPath;
         this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
         // Have the counts ready for the next directory:
         fsDirGetEntryCount(&dir, &currentTotal);
-        i = 0;
+        currentCount = 0;
       }
     }
   }
@@ -290,14 +292,10 @@ std::vector<std::string> Controller::listSubfolderNames(const std::string& path)
   FsDir dir = this->openDirectory(path, FsDirOpenMode_ReadDirs);
 
   FsDirectoryEntry entry;
-  s64 entryCount;
-  fsDirGetEntryCount(&dir, &entryCount);
-
-  for (s64 i = 0; i < entryCount; i++) {
-    if (R_SUCCEEDED(fsDirRead(&dir, &entryCount, 1, &entry))) {
-      if (entry.type == FsDirEntryType_Dir) {
-        subfolders.push_back(entry.name);
-      }
+  s64 count = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &count, 1, &entry)) && count) {
+    if (entry.type == FsDirEntryType_Dir) {
+      subfolders.push_back(entry.name);
     }
   }
 
