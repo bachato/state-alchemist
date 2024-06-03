@@ -90,6 +90,10 @@ std::string_view Controller::getActiveMod() {
  * @requirement: group and source must be set
  */
 void Controller::activateMod(const std::string& mod) {
+
+  // Skip if already active
+  if (this->getActiveMod() == mod) { return; }
+
   // Path to the "mod" folder in alchemy's directory:
   std::string modPath = this->getModPath(mod);
   // Path of the txt file for the active mod:
@@ -97,9 +101,11 @@ void Controller::activateMod(const std::string& mod) {
 
   FsDir dir = this->openDirectory(modPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
+  // Count for entries of currentDirectory:
+  s64 currentCount = 0;
+
   // Used for "storing" where the iteration left off at when traversing deeper into the hierarchy:
   std::vector<u64> counts;
-  std::vector<s64> totals;
 
   // The directory we are currently at:
   std::string currentDirectory = modPath;
@@ -107,44 +113,15 @@ void Controller::activateMod(const std::string& mod) {
   // Position in the txt file where we should write the next file path:
   s64 txtOffset = 0;
 
-  // Counts for entries of currentDirectory:
-  s64 currentCount = 0;
-  s64 currentTotal = 0;
-  fsDirGetEntryCount(&dir, &currentTotal);
-
   FsDirectoryEntry entry;
 
   // The entry path we will look at in the following iteration in the loop:
   std::string nextAlchPath;
   std::string nextAtmoPath;
 
-  // Set to true once we have traversed the entire folder directory within the mod folder:
-  bool isDone = false;
-  while (!isDone) {
+  while (R_SUCCEEDED(fsDirRead(&dir, &currentCount, 1, &entry))) {
 
-    // If we have analyzed all entries in the current directory, navigate back up to where we left off in the parent:
-    if (currentCount == currentTotal) {
-
-      // If there's nothing left in our count storage, we've navigated everything, so we're done:
-      if (counts.size() == 0) {
-        isDone = true;
-        break;
-      } else {
-        // Otherwise, let's get back the count data of where we left off in the parent:
-        currentCount = counts.back();
-        currentTotal = totals.back();
-        counts.pop_back();
-        totals.pop_back();
-
-        // Remove the string portion after the last '/' to get the parent's path:
-        std::size_t lastSlashIndex = currentDirectory.rfind('/');
-        currentDirectory = currentDirectory.substr(0, lastSlashIndex);
-        this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
-      }
-    }
-
-    if (R_SUCCEEDED(fsDirRead(&dir, &currentCount, 1, &entry))) {
-
+    if (currentCount > 0) {
       nextAlchPath = currentDirectory + "/" + entry.name;
 
       // If the next entry is a file, we will move it and record it as moved as long as there isn't a conflict:
@@ -158,18 +135,29 @@ void Controller::activateMod(const std::string& mod) {
       // If the next entry is a folder, we will traverse within it:
       } else if (entry.type == FsDirEntryType_Dir) {
 
-        // Add the current counts to the storage:
+        // Add the current count to the storage:
         counts.push_back(currentCount);
-        totals.push_back(currentTotal);
 
         currentDirectory = nextAlchPath;
         this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
-        // Have the counts ready for the next directory:
-        fsDirGetEntryCount(&dir, &currentTotal);
+        // Reset the count for the next directory:
         currentCount = 0;
       }
+    } else {
+      // If there's nothing left in our count storage, we've navigated everything, so we're done:
+      if (counts.size() == 0) { break; }
+
+      // Otherwise, let's get back the count data of where we left off in the parent:
+      currentCount = counts.back();
+      counts.pop_back();
+
+      // Remove the string portion after the last '/' to get the parent's path:
+      std::size_t lastSlashIndex = currentDirectory.rfind('/');
+      currentDirectory = currentDirectory.substr(0, lastSlashIndex);
+      this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
     }
+
   }
 
   fsDirClose(&dir);
@@ -182,6 +170,9 @@ void Controller::activateMod(const std::string& mod) {
  */
 void Controller::deactivateMod() {
   std::string activeMod(this->getActiveMod());
+
+  // If no active mod:
+  if (activeMod.empty()) { return; }
 
   // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
   FsFile movedFilesList;
@@ -324,7 +315,12 @@ void Controller::recordFile(const std::string& line, const std::string& movedFil
   // Open the file:
   FsFile movedListFile;
   this->tryResult(
-    fsFsOpenFile(&this->sdSystem, this->toPathBuffer(movedFilesListPath), FsOpenMode_Write, &movedListFile),
+    fsFsOpenFile(
+      &this->sdSystem,
+      this->toPathBuffer(movedFilesListPath),
+      FsOpenMode_Write | FsOpenMode_Append,
+      &movedListFile
+    ),
     "fsWriteMoved"
   );
 
