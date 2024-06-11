@@ -18,6 +18,13 @@ tsl::elm::Element* GuiMods::createUI() {
   auto *defaultToggle = new tsl::elm::ToggleListItem("Default " + controller.source, activeMod == "");
   defaultToggle->setStateChangedListener([this](bool state) {
     if (state) {
+      this->toggles[0]->setState(true); /* Cannot "unset" default toggle */
+    } else {
+      // De-activate whatever the other active mod is:
+      for (const auto &toggle: this->toggles) {
+        toggle->setState(false);
+      }
+      this->toggles[0]->setState(true);
       controller.deactivateMod();
     }
   });
@@ -32,6 +39,7 @@ tsl::elm::Element* GuiMods::createUI() {
 
     item->setStateChangedListener([this, mod](bool state) {
       if (state) {
+        this->toggles[0]->setState(false); /* toggles[0] is the default no-mod toggle */
         controller.deactivateMod();
         controller.activateMod(mod);
       } else {

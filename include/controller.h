@@ -16,6 +16,11 @@ class Controller {
 
     void init();
 
+    /**
+     * Gets the title ID in the form of a string
+     */
+    std::string getTitleIdStr();
+
     bool doesGameHaveFolder();
 
     /*
@@ -69,6 +74,9 @@ class Controller {
      */
     void changeDirectory(FsDir& dir, const std::string& path, u32 mode);
 
+    void createDirectoryIfNeeded(const std::string& path);
+
+    bool doesFolderExist(const std::string& path);
     bool doesFileExist(const std::string& path);
 
     /**

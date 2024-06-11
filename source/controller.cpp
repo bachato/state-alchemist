@@ -3,6 +3,8 @@
 
 #include "ui/ui_error.h"
 
+#include <iomanip>
+
 #include <tesla.hpp>
 
 Controller controller;
@@ -18,10 +20,36 @@ void Controller::init() {
 }
 
 /**
+ * Gets the title ID in the form of a string
+ */
+std::string Controller::getTitleIdStr() {
+  u64 idCopy = this->titleId;
+  std::string strId;
+
+  // Copilot gave me this; converts to hex
+  do {
+    strId.insert(strId.begin(), "0123456789abcdef"[idCopy % 16]);
+    idCopy >>= 4;
+  } while (idCopy != 0);
+
+  // Uppercase letter characters
+  for (char& c : strId) {
+    c = std::toupper(c);
+  }
+
+  // Pad 0s to the left to make it the proper length
+  do {
+    strId.insert(0, "0");
+  } while (strId.size() < 16);
+
+  return strId;
+}
+
+/**
  * Checks if the currenty-running game has a folder set up for Mod Alchemist
  */
 bool Controller::doesGameHaveFolder() {
-  return this->doesFileExist(this->getGamePath());
+  return this->doesFolderExist(this->getGamePath());
 }
 
 /**
@@ -63,11 +91,11 @@ std::string_view Controller::getActiveMod() {
 
   // Find the .txt file in the directory. The name would be the active mod:
   FsDirectoryEntry entry;
-  s64 count = 0;
+  s64 readCount = 0;
   std::string_view activeMod = "";
   std::string_view name;
 
-  while (R_SUCCEEDED(fsDirRead(&sourceDir, &count, 1, &entry)) && count) {
+  while (R_SUCCEEDED(fsDirRead(&sourceDir, &readCount, 1, &entry)) && readCount) {
     if (entry.type == FsDirEntryType_File) {
       name = entry.name;
       if (name.find(TXT_EXT) != std::string::npos) {
@@ -101,11 +129,11 @@ void Controller::activateMod(const std::string& mod) {
 
   FsDir dir = this->openDirectory(modPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
-  // Count for entries of currentDirectory:
-  s64 currentCount = 0;
+  // Iterartor for current entry in the current directory:
+  short i = 0;
 
   // Used for "storing" where the iteration left off at when traversing deeper into the hierarchy:
-  std::vector<u64> counts;
+  std::vector<u64> iStorage;
 
   // The directory we are currently at:
   std::string currentDirectory = modPath;
@@ -113,49 +141,66 @@ void Controller::activateMod(const std::string& mod) {
   // Position in the txt file where we should write the next file path:
   s64 txtOffset = 0;
 
+  // The index of the current entry we're iterating over in the current directory:
+  short entryIndex = 0;
+
+  // The current number of files read at a time
+  // It reads 1 at a time, so it will always be either 1 or 0 (0 if all have been read)
+  s64 readCount = 0;
+
   FsDirectoryEntry entry;
 
   // The entry path we will look at in the following iteration in the loop:
   std::string nextAlchPath;
   std::string nextAtmoPath;
 
-  while (R_SUCCEEDED(fsDirRead(&dir, &currentCount, 1, &entry))) {
+  this->createDirectoryIfNeeded(this->getAtmospherePath());
 
-    if (currentCount > 0) {
-      nextAlchPath = currentDirectory + "/" + entry.name;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry))) {
 
-      // If the next entry is a file, we will move it and record it as moved as long as there isn't a conflict:
-      if (entry.type == FsDirEntryType_File) {
+    // Continue iterating the index until it catches up with the iteration we should be on (if needed):
+    entryIndex++;
+    if (entryIndex > i) {
+      i++;
+
+      if (readCount > 0) {
+        nextAlchPath = currentDirectory + "/" + entry.name;
         nextAtmoPath = this->getAtmosphereModPath(modPath.size(), nextAlchPath);
 
-        if (!this->doesFileExist(nextAtmoPath)) {
+        // If the next entry is a file, we will move it and record it as moved as long as there isn't a conflict:
+        if (entry.type == FsDirEntryType_File && !this->doesFileExist(nextAtmoPath)) {
           this->recordFile(nextAtmoPath + "\n", movedFilesFilePath, txtOffset);
           this->moveFile(nextAlchPath, nextAtmoPath);
+        // If the next entry is a folder, we will traverse within it:
+        } else if (entry.type == FsDirEntryType_Dir) {
+          this->createDirectoryIfNeeded(nextAtmoPath);
+
+          // Add the current count to the storage:
+          iStorage.push_back(i);
+
+          currentDirectory = nextAlchPath;
+          this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
+
+          // Reset the index & iterator because we're starting in a new folder:
+          entryIndex = 0;
+          i = 0;
         }
-      // If the next entry is a folder, we will traverse within it:
-      } else if (entry.type == FsDirEntryType_Dir) {
+      } else {
+        // If there's nothing left in our count storage, we've navigated everything, so we're done:
+        if (iStorage.size() == 0) { break; }
 
-        // Add the current count to the storage:
-        counts.push_back(currentCount);
+        // Otherwise, let's get back the count data of where we left off in the parent:
+        i = iStorage.back();
+        iStorage.pop_back();
 
-        currentDirectory = nextAlchPath;
+        // Remove the string portion after the last '/' to get the parent's path:
+        std::size_t lastSlashIndex = currentDirectory.rfind('/');
+        currentDirectory = currentDirectory.substr(0, lastSlashIndex);
         this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
-        // Reset the count for the next directory:
-        currentCount = 0;
+        // Reset the entry index because it will start at the beginning again:
+        entryIndex = 0;
       }
-    } else {
-      // If there's nothing left in our count storage, we've navigated everything, so we're done:
-      if (counts.size() == 0) { break; }
-
-      // Otherwise, let's get back the count data of where we left off in the parent:
-      currentCount = counts.back();
-      counts.pop_back();
-
-      // Remove the string portion after the last '/' to get the parent's path:
-      std::size_t lastSlashIndex = currentDirectory.rfind('/');
-      currentDirectory = currentDirectory.substr(0, lastSlashIndex);
-      this->changeDirectory(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
     }
 
   }
@@ -266,11 +311,38 @@ void Controller::changeDirectory(FsDir& dir, const std::string& path, u32 mode) 
   );
 }
 
-bool Controller::doesFileExist(const std::string& path) {
+void Controller::createDirectoryIfNeeded(const std::string& path) {
+  if (this->doesFolderExist(path)) { return; }
+
+  this->tryResult(
+    fsFsCreateDirectory(&this->sdSystem, this->toPathBuffer(path)),
+    "fsCreateDir"
+  );
+}
+
+bool Controller::doesFolderExist(const std::string& path) {
   FsDir dir;
-  // If the file can be opened, it exists:
+
+  // If the directory can be opened, it exists:
   bool exists = R_SUCCEEDED(fsFsOpenDirectory(&this->sdSystem, this->toPathBuffer(path), FsDirOpenMode_ReadFiles, &dir));
-  fsDirClose(&dir);
+  
+  if (exists) {
+    fsDirClose(&dir);
+  }
+  
+  return exists;
+}
+
+bool Controller::doesFileExist(const std::string& path) {
+  FsFile file;
+
+  // If the file can be opened, it exists:
+  bool exists = R_SUCCEEDED(fsFsOpenFile(&this->sdSystem, this->toPathBuffer(path), FsOpenMode_Read, &file));
+
+  if (exists) {
+    fsFileClose(&file);
+  }
+
   return exists;
 }
 
@@ -283,8 +355,8 @@ std::vector<std::string> Controller::listSubfolderNames(const std::string& path)
   FsDir dir = this->openDirectory(path, FsDirOpenMode_ReadDirs);
 
   FsDirectoryEntry entry;
-  s64 count = 0;
-  while (R_SUCCEEDED(fsDirRead(&dir, &count, 1, &entry)) && count) {
+  s64 readCount = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
     if (entry.type == FsDirEntryType_Dir) {
       subfolders.push_back(entry.name);
     }
@@ -349,7 +421,7 @@ void Controller::moveFile(const std::string& fromPath, const std::string& toPath
  * Gets Mod Alchemist's game directory:
  */
 std::string Controller::getGamePath() {
-  return ALCHEMIST_PATH + std::to_string(this->titleId);
+  return ALCHEMIST_PATH + this->getTitleIdStr();
 }
 
 /*
@@ -383,7 +455,7 @@ std::string Controller::getModPath(const std::string& mod) {
  * Gets the game's path that's stored within Atmosphere's directory
  */
 std::string Controller::getAtmospherePath() {
-  return ATMOSPHERE_PATH + std::to_string(this->titleId);
+  return ATMOSPHERE_PATH + this->getTitleIdStr();
 }
 
 /**
@@ -391,7 +463,7 @@ std::string Controller::getAtmospherePath() {
  * It is built off of its current path within the Mod Alchemist's directory structure.
  */
 std::string Controller::getAtmosphereModPath(std::size_t alchemistModFolderPathSize, const std::string& alchemistModFilePath) {
-  return this->getAtmospherePath() + "/" + alchemistModFilePath.substr(alchemistModFolderPathSize);
+  return this->getAtmospherePath() + alchemistModFilePath.substr(alchemistModFolderPathSize);
 }
 
 /**

@@ -1,5 +1,3 @@
-#include <switch.h>
-
 #include "overlay.h"
 #include "ui/ui_groups.h"
 
