@@ -21,6 +21,13 @@ class GuiError : public tsl::Gui {
       HidAnalogStickState joyStickPosLeft,
       HidAnalogStickState joyStickPosRight
     ) override;
+
+    /**
+     * Displays an error code to the user if @param r is erroneous
+     * 
+     * @param alchemyCode: Code to indicate the origin of the error in Mod Alchemist's code
+     */
+    static void tryResult(const Result& r, const std::string& alchemyCode);
 };
 
 #endif // GUI_ERROR_HPP

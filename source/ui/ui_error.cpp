@@ -23,3 +23,16 @@ bool GuiError::handleInput(
   }
   return false;
 }
+
+/**
+ * Displays an error code to the user if @param r is erroneous
+ * 
+ * @param alchemyCode: A short semi-readable unique code to indicate the origin of the error in Mod Alchemist's code
+ */
+void GuiError::tryResult(const Result& r, const std::string& alchemyCode) {
+  if (R_FAILED(r)) {
+    fatalThrow(r);
+    //tsl::changeTo<GuiError>("Error: " + alchemyCode + " " + std::to_string(r));
+    //abort();
+  }
+}

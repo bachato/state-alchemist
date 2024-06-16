@@ -6,9 +6,6 @@
 #include <string>
 
 class Controller {
-  private:
-    FsFileSystem sdSystem;
-
   public:
     u64 titleId; // The current Game's Title ID
     std::string group;
@@ -63,42 +60,6 @@ class Controller {
   private:
 
     /**
-     * Creates a new open FsDir object for the specified path
-     * 
-     * Don't forget to close when done
-     */
-    FsDir openDirectory(const std::string& path, u32 mode);
-
-    /**
-     * Changes an FsDir instance to the specified path
-     */
-    void changeDirectory(FsDir& dir, const std::string& path, u32 mode);
-
-    void createDirectoryIfNeeded(const std::string& path);
-
-    bool doesFolderExist(const std::string& path);
-    bool doesFileExist(const std::string& path);
-
-    /**
-     * Gets a vector of all folder names that are directly within the specified path
-     */
-    std::vector<std::string> listSubfolderNames(const std::string& path);
-
-    /**
-     * Records the line parameter (should end in \n) for a file being moved in modPath
-     * "line" is appended to the movedFilesListPath file 
-     * 
-     * offset is expected to be at the end of the file,
-     * and it's updated to the new position at the end of file
-     */
-    void recordFile(const std::string& line, const std::string& movedFilesListPath, s64& offset);
-
-    /**
-     * Changes the fromPath file parameter's location to what's specified as the toPath parameter
-     */
-    void moveFile(const std::string& fromPath, const std::string& toPath);
-
-    /**
      * Gets Mod Alchemist's game directory:
      */
     std::string getGamePath();
@@ -135,10 +96,6 @@ class Controller {
      * The file should only exist if the mod is currently active
      */
     std::string getMovedFilesListFilePath(const std::string& mod);
-
-    char* toPathBuffer(const std::string& path);
-
-    void tryResult(const Result& r, const std::string& alchemyCode);
 };
 
 extern Controller controller;
