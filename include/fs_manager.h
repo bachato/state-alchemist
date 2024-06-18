@@ -29,6 +29,12 @@ namespace FsManager {
   bool doesFileExist(const std::string& path);
 
   /**
+   * Assumes file exists
+   * True if file contains 0 bytes
+   */
+  bool isFileEmpty(const std::string& path);
+
+  /**
    * Gets a vector of all folder names that are directly within the specified path
    */
   std::vector<std::string> listSubfolderNames(const std::string& path);
@@ -40,6 +46,11 @@ namespace FsManager {
    * and it's updated to the new position at the end of file
    */
   void recordFile(const std::string& line, const std::string& filePath, s64& offset);
+
+  /**
+   * Removes all content from the file, but does not delete it
+   */
+  void clearFile(const std::string& filePath);
 
   /**
    * Changes the fromPath file parameter's location to what's specified as the toPath parameter

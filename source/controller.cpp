@@ -124,10 +124,168 @@ void Controller::activateMod(const std::string& mod) {
   // Skip if already active
   if (this->getActiveMod() == mod) { return; }
 
+  this->bringOutModFiles(mod);
+}
+
+/**
+ * Deactivates the currently active mod, restoring the moddable source to its vanilla state
+ * 
+ * @requirement: group and source must be set
+ */
+void Controller::deactivateMod() {
+  std::string activeMod(this->getActiveMod());
+
+  // If no active mod:
+  if (activeMod.empty()) { return; }
+
+  this->returnModFiles(activeMod);
+
+  // Once all the files have been returned, delete the txt list:
+  fsFsDeleteFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getMovedFilesListFilePath(activeMod)));
+}
+
+/**
+ * Returns the files of all currently active mods to their original location (disabling them in the game).
+ * Mods will still be marked as "active".
+ * 
+ * Used when the game is closed.
+ */
+void Controller::disableAllActiveMods() {
+  std::vector<std::string> groups = this->loadGroups();
+  
+  for (const std::string& group : groups) {
+    this->group = group;
+
+    std::vector<std::string> sources = this->loadSources();
+    for (const std::string& source : sources) {
+      this->source = source;
+      
+      std::string activeMod(this->getActiveMod());
+
+      if (!activeMod.empty()) {
+        this->returnModFiles(activeMod);
+        FsManager::clearFile(this->getMovedFilesListFilePath(activeMod));
+      }
+    }
+  }
+}
+
+/**
+ * Brings the files of all currently active mods to their proper location in the atmosphere folder's subfolders
+ * (re-enabling any of them in the game).
+ * 
+ * Used when the game is started.
+ */
+void Controller::enableAllActiveMods() {
+  std::vector<std::string> groups = this->loadGroups();
+  
+  for (const std::string& group : groups) {
+    this->group = group;
+
+    std::vector<std::string> sources = this->loadSources();
+    for (const std::string& source : sources) {
+      this->source = source;
+      
+      std::string activeMod(this->getActiveMod());
+
+      if (!activeMod.empty()) {
+        this->bringOutModFiles(activeMod);
+      }
+    }
+  }
+
+  // Reset current group & source for UI:
+  this->group = "";
+  this->source = "";
+}
+
+/**
+ * Unmount SD card when destroyed 
+ */
+Controller::~Controller() {
+  fsFsClose(&FsManager::sdSystem);
+}
+
+/**
+ * Assumes the mod parameter is currently active
+ * 
+ * Returns the files of the mod from the atmosphere directorey to their original alchemist location
+ * (disabling them in the game).
+ * Just does the files. Does not "unmark" the mod as being deactivated in the UI.
+ */
+void Controller::returnModFiles(const std::string& mod) {
+
+  // Try to open the mod's txt file to get the list of files that were moved to atmosphere's folder:
+  FsFile movedFilesList;
+  GuiError::tryResult(
+    fsFsOpenFile(
+      &FsManager::sdSystem,
+      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)),
+      FsOpenMode_Read,
+      &movedFilesList
+    ),
+    "fsReadMoved"
+  );
+
+  s64 fileSize;
+  GuiError::tryResult(
+    fsFileGetSize(&movedFilesList, &fileSize),
+    "fsMovedSize"
+  );
+
+  // Small buffer to stream the file a small number of bytes at a time to minimize memory consumption:
+  s64 offset = 0;
+  char* buffer = new char[FILE_LIST_BUFFER_SIZE];
+  std::string pathBuilder = "";
+
+  std::string atmoPath;
+  std::string alchemyPath;
+
+  // As long as there is still data in the file:
+  while (offset < fileSize) {
+
+    // Read some of the text into our buffer:
+    GuiError::tryResult(
+      fsFileRead(&movedFilesList, offset, buffer, FILE_LIST_BUFFER_SIZE, FsReadOption_None, nullptr),
+      "fsReadPath"
+    );
+
+    // Append it to the string we're using to build the next path:
+    pathBuilder += std::string_view(buffer, FILE_LIST_BUFFER_SIZE);
+
+    // If the path builder got a new line character from the buffer, we have a full path:
+    std::size_t newLinePos = pathBuilder.find('\n');
+    if (newLinePos != std::string::npos) {
+      // Trim the new line and any characters that were gathered after it to get the cleaned atmosphere file path:
+      atmoPath = pathBuilder.substr(0, newLinePos);
+
+      // Move any characters gathered after the new line to the pathBuilder string for the next path:
+      pathBuilder = pathBuilder.substr(newLinePos + 1);
+
+      // The file's original location can be built by replacing the atmosphere portion of the path with alchemy's portion:
+      alchemyPath = this->getModPath(mod) + atmoPath.substr(this->getAtmospherePath().size());
+
+      FsManager::moveFile(atmoPath, alchemyPath);
+    }
+
+    offset += FILE_LIST_BUFFER_SIZE;
+  }
+
+  delete[] buffer;
+
+  fsFileClose(&movedFilesList);
+}
+
+void Controller::bringOutModFiles(const std::string& mod) {
+
   // Path to the "mod" folder in alchemy's directory:
   std::string modPath = this->getModPath(mod);
   // Path of the txt file for the active mod:
   std::string movedFilesFilePath = this->getMovedFilesListFilePath(mod);
+
+  if (FsManager::doesFileExist(movedFilesFilePath) && !FsManager::isFileEmpty(movedFilesFilePath)) {
+    return;
+  }
 
   FsDir dir = FsManager::openFolder(modPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
@@ -210,87 +368,6 @@ void Controller::activateMod(const std::string& mod) {
   fsDirClose(&dir);
 }
 
-/**
- * Deactivates the currently active mod, restoring the moddable source to its vanilla state
- * 
- * @requirement: group and source must be set
- */
-void Controller::deactivateMod() {
-  std::string activeMod(this->getActiveMod());
-
-  // If no active mod:
-  if (activeMod.empty()) { return; }
-
-  // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
-  FsFile movedFilesList;
-  GuiError::tryResult(
-    fsFsOpenFile(
-      &FsManager::sdSystem,
-      FsManager::toPathBuffer(this->getMovedFilesListFilePath(activeMod)),
-      FsOpenMode_Read,
-      &movedFilesList
-    ),
-    "fsReadMoved"
-  );
-
-  s64 fileSize;
-  GuiError::tryResult(
-    fsFileGetSize(&movedFilesList, &fileSize),
-    "fsMovedSize"
-  );
-
-  // Small buffer to stream the file a small number of bytes at a time to minimize memory consumption:
-  s64 offset = 0;
-  char* buffer = new char[FILE_LIST_BUFFER_SIZE];
-  std::string pathBuilder = "";
-
-  std::string atmoPath;
-  std::string alchemyPath;
-
-  // As long as there is still data in the file:
-  while (offset < fileSize) {
-
-    // Read some of the text into our buffer:
-    GuiError::tryResult(
-      fsFileRead(&movedFilesList, offset, buffer, FILE_LIST_BUFFER_SIZE, FsReadOption_None, nullptr),
-      "fsReadPath"
-    );
-
-    // Append it to the string we're using to build the next path:
-    pathBuilder += std::string_view(buffer, FILE_LIST_BUFFER_SIZE);
-
-    // If the path builder got a new line character from the buffer, we have a full path:
-    std::size_t newLinePos = pathBuilder.find('\n');
-    if (newLinePos != std::string::npos) {
-      // Trim the new line and any characters that were gathered after it to get the cleaned atmosphere file path:
-      atmoPath = pathBuilder.substr(0, newLinePos);
-
-      // Move any characters gathered after the new line to the pathBuilder string for the next path:
-      pathBuilder = pathBuilder.substr(newLinePos + 1);
-
-      // The file's original location can be built by replacing the atmosphere portion of the path with alchemy's portion:
-      alchemyPath = this->getModPath(activeMod) + atmoPath.substr(this->getAtmospherePath().size());
-
-      FsManager::moveFile(atmoPath, alchemyPath);
-    }
-
-    offset += FILE_LIST_BUFFER_SIZE;
-  }
-
-  delete[] buffer;
-
-  fsFileClose(&movedFilesList);
-
-  // Once all the files have been returned, delete the txt list:
-  fsFsDeleteFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getMovedFilesListFilePath(activeMod)));
-}
-
-/**
- * Unmount SD card when destroyed 
- */
-Controller::~Controller() {
-  fsFsClose(&FsManager::sdSystem);
-}
 /*
  * Gets Mod Alchemist's game directory:
  */

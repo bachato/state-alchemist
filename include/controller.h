@@ -53,11 +53,45 @@ class Controller {
     void deactivateMod();
 
     /**
+     * Returns the files of all currently active mods to their location in the mod_alchemy subfolders
+     * (disabling them in the game).
+     * 
+     * Mods will still be marked as "active".
+     * 
+     * Used when the game is closed.
+     */
+    void disableAllActiveMods();
+
+    /**
+     * Brings the files of all currently active mods to their proper location in the atmosphere folder's subfolders
+     * (re-enabling any of them in the game).
+     * 
+     * Used when the game is started.
+     */
+    void enableAllActiveMods();
+
+    /**
      * Unmount SD card when destroyed 
      */
     ~Controller();
 
   private:
+
+    /**
+     * Assumes the mod parameter is currently active
+     * 
+     * Returns the files of the mod from the atmosphere directorey to their original alchemist location
+     * (disabling them in the game).
+     * Just does the files. Does not "unmark" the mod as being deactivated in the UI.
+     */
+    void returnModFiles(const std::string& mod);
+
+    /**
+     * Assumes the mod parameter is currently active
+     * 
+     * Moves the mod's files from the alchemist directory to the atmosphere directory
+     */
+    void bringOutModFiles(const std::string& mod);
 
     /**
      * Gets Mod Alchemist's game directory:
