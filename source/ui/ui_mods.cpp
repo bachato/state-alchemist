@@ -16,44 +16,40 @@ tsl::elm::Element* GuiMods::createUI() {
 
   // Used to disable any active mod:
   auto *defaultToggle = new tsl::elm::ToggleListItem("Default " + controller.source, activeMod == "");
-  defaultToggle->setStateChangedListener([this, defaultToggle](bool state) {
+  defaultToggle->setStateChangedListener([this](bool state) {
     if (state) {
       // De-activate whatever the other active mod is:
       for (const auto &toggle: this->toggles) {
         toggle->setState(false);
       }
-      defaultToggle->setState(true); // Reactivate
+      this->toggles[0]->setState(true);
       controller.deactivateMod();
     } else {
-      defaultToggle->setState(true); /* Cannot "unset" default toggle */
+      this->toggles[0]->setState(true); /* Cannot "unset" default toggle */
     }
   });
 
   // Add the default option:
   this->toggles.push_back(defaultToggle);
-  list->addItem(defaultToggle);
+  list->addItem(this->toggles[0]);
 
   // Add a toggle for each mod:
   for (const std::string &mod : mods) {
-    auto *toggle = new tsl::elm::ToggleListItem(mod, mod == activeMod);
+    auto *item = new tsl::elm::ToggleListItem(mod, mod == activeMod);
 
-    toggle->setStateChangedListener([this, defaultToggle, toggle, mod](bool state) {
+    item->setStateChangedListener([this, mod](bool state) {
       if (state) {
-        // De-activate whatever the other active mod is:
-        for (const auto &otherToggle: this->toggles) {
-          otherToggle->setState(false);
-        }
-        toggle->setState(true); // Reactivate
+        this->toggles[0]->setState(false); /* toggles[0] is the default no-mod toggle */
         controller.deactivateMod();
         controller.activateMod(mod);
       } else {
-        this->toggles[0]->setState(true); /* Set "default" option to true */
+        this->toggles[0]->setState(true);
         controller.deactivateMod();
       }
     });
 
-    this->toggles.push_back(toggle);
-    list->addItem(toggle);
+    this->toggles.push_back(item);
+    list->addItem(item);
   }
 
   frame->setContent(list);

@@ -63,21 +63,6 @@ bool FsManager::doesFileExist(const std::string& path) {
 }
 
 /**
- * Assumes file exists
- * True if file contains 0 bytes
- */
-bool FsManager::isFileEmpty(const std::string& path) {
-  FsFile file;
-
-  // Check if the file is empty:
-  s64 fileSize;
-  fsFileGetSize(&file, &fileSize);
-  fsFileClose(&file);
-
-  return fileSize == 0;
-}
-
-/**
  * Gets a vector of all folder names that are directly within the specified path
  */
 std::vector<std::string> FsManager::listSubfolderNames(const std::string& path) {
@@ -136,29 +121,6 @@ void FsManager::recordFile(const std::string& line, const std::string& filePath,
   // Update the offset to the end of the file:
   offset += line.size();
 }
-
-/**
- * Removes all content from the file, but does not delete it
- */
-void FsManager::clearFile(const std::string& filePath) {
-  // If the file doesn't exist, there's nothing to clear:
-  if (!doesFileExist(filePath)) { return; }
-
-  // Open the file:
-  FsFile file;
-  GuiError::tryResult(
-    fsFsOpenFile(&sdSystem, toPathBuffer(filePath), FsOpenMode_Write, &file),
-    "fsOpenFileToClear"
-  );
-
-  // Clear the file:
-  GuiError::tryResult(
-    fsFileSetSize(&file, 0),
-    "fsClearFile"
-  );
-  fsFileClose(&file);
-}
-
 
 /**
  * Changes the fromPath file parameter's location to what's specified as the toPath parameter

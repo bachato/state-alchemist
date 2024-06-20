@@ -9,6 +9,8 @@ tsl::elm::Element* GuiGroups::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
   auto list = new tsl::elm::List();
+
+  controller.init();
   
   if (!controller.doesGameHaveFolder()) {
     list->addItem(new tsl::elm::ListItem("The running game has no folder."));

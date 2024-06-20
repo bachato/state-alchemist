@@ -1,18 +1,11 @@
 #include "overlay.h"
-
-#include "controller.h"
 #include "ui/ui_groups.h"
 
 void ModAlchemist::initServices() {
   pmdmntInitialize();
   pminfoInitialize();
-
-  controller.init();
-  controller.enableAllActiveMods();
 }
 void ModAlchemist::exitServices() {
-  controller.disableAllActiveMods();
-  
   pminfoExit();
   pmdmntExit();
 }
