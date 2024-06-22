@@ -1,5 +1,6 @@
 #include "ui/ui_groups.h"
 #include "ui/ui_sources.h"
+
 #include "controller.h"
 #include "constants.h"
 
@@ -9,16 +10,6 @@ tsl::elm::Element* GuiGroups::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
 
   auto list = new tsl::elm::List();
-
-  controller.init();
-  
-  if (!controller.doesGameHaveFolder()) {
-    list->addItem(new tsl::elm::ListItem("The running game has no folder."));
-    list->addItem(new tsl::elm::ListItem("It should be named \"" + controller.getTitleIdStr() + "\""));
-    list->addItem(new tsl::elm::ListItem("And located in the \"" + ALCHEMIST_PATH + "\" directory."));
-    frame->setContent(list);
-    return frame;
-  }
 
   std::vector<std::string> groups = controller.loadGroups();
 

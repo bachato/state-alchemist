@@ -221,12 +221,45 @@ void Controller::deactivateMod() {
   // If no active mod:
   if (activeMod.empty()) { return; }
 
+  this->returnFiles(activeMod);
+}
+
+void Controller::deactivateAll() {
+  std::vector<std::string> groups = this->loadGroups();
+
+  for (const std::string& group : groups) {
+    this->group = group;
+    std::vector<std::string> sources = this->loadSources();
+
+    for (const std::string& source : sources) {
+      this->source = source;
+      std::string activeMod(this->getActiveMod());
+
+      if (!activeMod.empty()) {
+        this->returnFiles(activeMod);
+      }
+    }
+  }
+
+  this->group = "";
+  this->source = "";
+}
+
+/**
+ * Unmount SD card when destroyed 
+ */
+Controller::~Controller() {
+  fsFsClose(&FsManager::sdSystem);
+}
+
+void Controller::returnFiles(const std::string& mod) {
+
   // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
   FsFile movedFilesList;
   GuiError::tryResult(
     fsFsOpenFile(
       &FsManager::sdSystem,
-      FsManager::toPathBuffer(this->getMovedFilesListFilePath(activeMod)),
+      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)),
       FsOpenMode_Read,
       &movedFilesList
     ),
@@ -269,7 +302,7 @@ void Controller::deactivateMod() {
       pathBuilder = pathBuilder.substr(newLinePos + 1);
 
       // The file's original location can be built by replacing the atmosphere portion of the path with alchemy's portion:
-      alchemyPath = this->getModPath(activeMod) + atmoPath.substr(this->getAtmospherePath().size());
+      alchemyPath = this->getModPath(mod) + atmoPath.substr(this->getAtmospherePath().size());
 
       FsManager::moveFile(atmoPath, alchemyPath);
     }
@@ -282,15 +315,9 @@ void Controller::deactivateMod() {
   fsFileClose(&movedFilesList);
 
   // Once all the files have been returned, delete the txt list:
-  fsFsDeleteFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getMovedFilesListFilePath(activeMod)));
+  fsFsDeleteFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)));
 }
 
-/**
- * Unmount SD card when destroyed 
- */
-Controller::~Controller() {
-  fsFsClose(&FsManager::sdSystem);
-}
 /*
  * Gets Mod Alchemist's game directory:
  */

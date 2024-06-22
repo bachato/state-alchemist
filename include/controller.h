@@ -52,12 +52,16 @@ class Controller {
      */
     void deactivateMod();
 
+    void deactivateAll();
+
     /**
      * Unmount SD card when destroyed 
      */
     ~Controller();
 
   private:
+
+    void returnFiles(const std::string& mod);
 
     /**
      * Gets Mod Alchemist's game directory:
