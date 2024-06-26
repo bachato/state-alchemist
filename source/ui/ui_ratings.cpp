@@ -11,7 +11,9 @@ tsl::elm::Element* GuiRatings::createUI() {
   this->defaultRating = controller.loadDefaultRating();
 
   // Used for when no mod is active:
-  auto *defaultSlider = new tsl::elm::NamedStepTrackBar(" ", {"\u22A0", "\u2680", "\u2681", "\u2682", "\u2683", "\u2684", "\u2685"});
+  auto *defaultSlider = new tsl::elm::StepTrackBar(" ", 10);
+  defaultSlider->setProgress(this->defaultRating);
+
   defaultSlider->setValueChangedListener([this](u8 value) {
     this->defaultRating = value;
   });
@@ -26,7 +28,7 @@ tsl::elm::Element* GuiRatings::createUI() {
   for (const auto& [name, rating]: this->ratings) {
     list->addItem(new tsl::elm::CategoryHeader(name));
 
-    auto *slider = new tsl::elm::NamedStepTrackBar(" ", {"\u22A0", "\u2680", "\u2681", "\u2682", "\u2683", "\u2684", "\u2685"});
+    auto *slider = new tsl::elm::StepTrackBar(" ", 10);
     slider->setProgress(rating);
 
     slider->setValueChangedListener([this, name](u8 value) {
