@@ -29,9 +29,10 @@ namespace FsManager {
   bool doesFileExist(const std::string& path);
 
   /**
-   * Gets a vector of all folder names that are directly within the specified path
+   * Gets a vector of all entity names that are directly within the specified path
+   * (parsing the name from the folder name)
    */
-  std::vector<std::string> listSubfolderNames(const std::string& path);
+  std::vector<std::string> listNames(const std::string& path);
 
   /**
    * Records the line parameter in the filePath

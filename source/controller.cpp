@@ -2,6 +2,7 @@
 
 #include "constants.h"
 #include "fs_manager.h"
+#include "meta_manager.h"
 
 #include "ui/ui_error.h"
 
@@ -22,29 +23,10 @@ void Controller::init() {
 }
 
 /**
- * Gets the title ID in the form of a string
+ * Formats u64 title ID into a hexidecimal string
  */
-std::string Controller::getTitleIdStr() {
-  u64 idCopy = this->titleId;
-  std::string strId;
-
-  // Copilot gave me this; converts to hex
-  do {
-    strId.insert(strId.begin(), "0123456789abcdef"[idCopy % 16]);
-    idCopy >>= 4;
-  } while (idCopy != 0);
-
-  // Uppercase letter characters
-  for (char& c : strId) {
-    c = std::toupper(c);
-  }
-
-  // Pad 0s to the left to make it the proper length
-  do {
-    strId.insert(0, "0");
-  } while (strId.size() < 16);
-
-  return strId;
+std::string Controller::getHexTitleId() {
+  return MetaManager::getHexTitleId(this->titleId);
 }
 
 /**
@@ -58,7 +40,7 @@ bool Controller::doesGameHaveFolder() {
  * Load all groups from the game folder
  */
 std::vector<std::string> Controller::loadGroups() {
-  return FsManager::listSubfolderNames(this->getGamePath());
+  return FsManager::listNames(this->getGamePath());
 }
 
 /**
@@ -67,7 +49,7 @@ std::vector<std::string> Controller::loadGroups() {
  * @requirement: group must be set
  */
 std::vector<std::string> Controller::loadSources() {
-  return FsManager::listSubfolderNames(this->getGroupPath());
+  return FsManager::listNames(this->getGroupPath());
 }
 
 /**
@@ -76,7 +58,51 @@ std::vector<std::string> Controller::loadSources() {
  * @requirement: group and source must be set
  */
 std::vector<std::string> Controller::loadMods() {
-  return FsManager::listSubfolderNames(this->getSourcePath());
+  return FsManager::listNames(this->getSourcePath());
+}
+
+
+/*
+ * Loads map of mods names to each rating
+ */
+std::map<std::string, u8> Controller::loadRatings() {
+  std::map<std::string, u8> ratings;
+
+  FsDir dir = FsManager::openFolder(this->getSourcePath(), FsDirOpenMode_ReadDirs);
+
+  FsDirectoryEntry entry;
+  s64 readCount = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
+    if (entry.type == FsDirEntryType_Dir) {
+      std::string mod = MetaManager::parseName(entry.name);
+      ratings[mod] = MetaManager::parseRating(mod);
+    }
+  }
+
+  fsDirClose(&dir);
+
+  return ratings;
+}
+
+/*
+ * Loads the rating for the source (for using no mod)
+ */
+u8 Controller::loadDefaultRating() {
+  u8 rating;
+
+  FsDir dir = FsManager::openFolder(this->getGroupPath(), FsDirOpenMode_ReadDirs);
+
+  FsDirectoryEntry entry;
+  s64 readCount = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
+    if (entry.type == FsDirEntryType_Dir && this->source == MetaManager::parseName(entry.name)) {
+      rating = MetaManager::parseRating(entry.name);
+    }
+  }
+
+  fsDirClose(&dir);
+
+  return rating;
 }
 
 /**
@@ -322,7 +348,7 @@ void Controller::returnFiles(const std::string& mod) {
  * Gets Mod Alchemist's game directory:
  */
 std::string Controller::getGamePath() {
-  return ALCHEMIST_PATH + this->getTitleIdStr();
+  return ALCHEMIST_PATH + MetaManager::getHexTitleId(this->titleId);
 }
 
 /*
@@ -356,7 +382,7 @@ std::string Controller::getModPath(const std::string& mod) {
  * Gets the game's path that's stored within Atmosphere's directory
  */
 std::string Controller::getAtmospherePath() {
-  return ATMOSPHERE_PATH + this->getTitleIdStr();
+  return ATMOSPHERE_PATH + MetaManager::getHexTitleId(this->titleId);
 }
 
 /**

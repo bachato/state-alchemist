@@ -4,7 +4,9 @@
 #include "controller.h"
 #include "constants.h"
 
-GuiGroups::GuiGroups() { }
+GuiGroups::GuiGroups(EditMode editMode) {
+  this->editMode = editMode;
+}
 
 tsl::elm::Element* GuiGroups::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
@@ -22,10 +24,10 @@ tsl::elm::Element* GuiGroups::createUI() {
   for (const std::string &group : groups) {
     auto *item = new tsl::elm::ListItem(group);
 
-    item->setClickListener([group](u64 keys) {
+    item->setClickListener([this, group](u64 keys) {
       if (keys & HidNpadButton_A) {
         controller.group = group;
-        tsl::changeTo<GuiSources>();
+        tsl::changeTo<GuiSources>(this->editMode);
         return true;
       }
       return false;

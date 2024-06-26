@@ -1,19 +1,20 @@
-#ifndef GUI_GROUPS_HPP
-#define GUI_GROUPS_HPP
-
-#include "constants.h"
-
-#include <string>
-#include <vector>
+#ifndef UI_RATINGS_HPP
+#define UI_RATINGS_HPP
 
 #include <tesla.hpp>    // The Tesla Header
 
-class GuiGroups : public tsl::Gui {
+#include <string>
+#include <map>
+#include <vector>
+
+class GuiRatings : public tsl::Gui {
   private:
-    EditMode editMode;
+    u8 defaultRating;
+    std::map<std::string, u8> ratings;
+    std::vector<tsl::elm::TrackBar*> sliders;
 
   public:
-    GuiGroups(EditMode editMode);
+    GuiRatings();
 
     virtual tsl::elm::Element* createUI() override;
 
@@ -26,4 +27,4 @@ class GuiGroups : public tsl::Gui {
     ) override;
 };
 
-#endif // GUI_GROUPS_HPP
+#endif // UI_RATINGS_HPP

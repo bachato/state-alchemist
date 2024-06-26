@@ -3,6 +3,7 @@
 #include <switch.h>
 
 #include <vector>
+#include <map>
 #include <string>
 
 class Controller {
@@ -14,9 +15,9 @@ class Controller {
     void init();
 
     /**
-     * Gets the title ID in the form of a string
+     * Formats u64 title ID into a hexidecimal string
      */
-    std::string getTitleIdStr();
+    std::string getHexTitleId();
 
     bool doesGameHaveFolder();
 
@@ -34,6 +35,16 @@ class Controller {
      * Load all mod options that could be activated for the moddable source in the group
      */
     std::vector<std::string> loadMods();
+
+    /*
+     * Loads map of mods names to each rating
+     */
+    std::map<std::string, u8> loadRatings();
+
+    /*
+     * Loads the rating for the source (for using no mod)
+     */
+    u8 loadDefaultRating();
 
     /*
      * Gets the mod currently activated for the moddable source in the group

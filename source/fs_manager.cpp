@@ -1,5 +1,5 @@
 #include "fs_manager.h"
-
+#include "meta_manager.h"
 #include "ui/ui_error.h"
 
 FsFileSystem FsManager::sdSystem;
@@ -63,24 +63,25 @@ bool FsManager::doesFileExist(const std::string& path) {
 }
 
 /**
- * Gets a vector of all folder names that are directly within the specified path
+ * Gets a vector of all entity names that are directly within the specified path
+ * (parsing the name from the folder name)
  */
-std::vector<std::string> FsManager::listSubfolderNames(const std::string& path) {
-  std::vector<std::string> subfolders;
+std::vector<std::string> FsManager::listNames(const std::string& path) {
+  std::vector<std::string> names;
 
-  FsDir dir = openFolder(path, FsDirOpenMode_ReadDirs);
+  FsDir dir = FsManager::openFolder(path, FsDirOpenMode_ReadDirs);
 
   FsDirectoryEntry entry;
   s64 readCount = 0;
   while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
     if (entry.type == FsDirEntryType_Dir) {
-      subfolders.push_back(entry.name);
+      names.push_back(MetaManager::parseName(entry.name));
     }
   }
 
   fsDirClose(&dir);
 
-  return subfolders;
+  return names;
 }
 
 /**

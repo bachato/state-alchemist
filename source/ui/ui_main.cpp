@@ -16,7 +16,7 @@ tsl::elm::Element* GuiMain::createUI() {
   
   if (!controller.doesGameHaveFolder()) {
     list->addItem(new tsl::elm::ListItem("The running game has no folder."));
-    list->addItem(new tsl::elm::ListItem("It should be named \"" + controller.getTitleIdStr() + "\""));
+    list->addItem(new tsl::elm::ListItem("It should be named \"" + controller.getHexTitleId() + "\""));
     list->addItem(new tsl::elm::ListItem("And located in the \"" + ALCHEMIST_PATH + "\" directory."));
     frame->setContent(list);
     return frame;
@@ -25,7 +25,16 @@ tsl::elm::Element* GuiMain::createUI() {
   auto* setMods = new tsl::elm::ListItem("Set Mods");
   setMods->setClickListener([](u64 keys) {
     if (keys & HidNpadButton_A) {
-      tsl::changeTo<GuiGroups>();
+      tsl::changeTo<GuiGroups>(EditMode::TOGGLE);
+      return true;
+    }
+    return false;
+  });
+
+  auto* setRatings = new tsl::elm::ListItem("Randomize Preferences");
+  setRatings->setClickListener([](u64 keys) {
+    if (keys & HidNpadButton_A) {
+      tsl::changeTo<GuiGroups>(EditMode::RATING);
       return true;
     }
     return false;
@@ -41,6 +50,7 @@ tsl::elm::Element* GuiMain::createUI() {
   });
 
   list->addItem(setMods);
+  list->addItem(setRatings);
   list->addItem(disableAll);
 
   frame->setContent(list);

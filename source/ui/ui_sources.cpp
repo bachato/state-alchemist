@@ -1,12 +1,15 @@
 #include "ui/ui_sources.h"
 #include "ui/ui_mods.h"
+#include "ui/ui_ratings.h"
 
 #include <string>
 #include <vector>
 
 #include "controller.h"
 
-GuiSources::GuiSources() {}
+GuiSources::GuiSources(EditMode editMode) {
+  this->editMode = editMode;
+}
 
 tsl::elm::Element* GuiSources::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.group);
@@ -25,10 +28,15 @@ tsl::elm::Element* GuiSources::createUI() {
   for (const std::string &source : sources) {
     auto *item = new tsl::elm::ListItem(source);
 
-    item->setClickListener([source](u64 keys) {
+    item->setClickListener([this, source](u64 keys) {
       if (keys & HidNpadButton_A) {
         controller.source = source;
-        tsl::changeTo<GuiMods>(); // Use the GuiMods class to navigate to the mods UI
+
+        if (this->editMode == EditMode::TOGGLE) {
+          tsl::changeTo<GuiMods>();
+        } else if (this->editMode == EditMode::RATING) {
+          tsl::changeTo<GuiRatings>();
+        }
         return true;
       }
       return false;
