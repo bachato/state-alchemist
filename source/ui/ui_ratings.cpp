@@ -7,8 +7,9 @@ GuiRatings::GuiRatings() { }
 tsl::elm::Element* GuiRatings::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.source);
 
-  this->ratings = controller.loadRatings();
-  this->defaultRating = controller.loadDefaultRating();
+  std::map<std::string, u8> savedRatings = controller.loadRatings();
+  this->savedDefaultRating = controller.loadDefaultRating();
+  this->defaultRating = this->savedDefaultRating;
 
   // Used for when no mod is active:
   auto *defaultSlider = new tsl::elm::StepTrackBar(" ", 10);
@@ -25,14 +26,14 @@ tsl::elm::Element* GuiRatings::createUI() {
   list->addItem(defaultSlider);
 
   // Add a header & slider for each mod:
-  for (const auto& [name, rating]: this->ratings) {
+  for (const auto& [name, rating]: savedRatings) {
     list->addItem(new tsl::elm::CategoryHeader(name));
 
     auto *slider = new tsl::elm::StepTrackBar(" ", 10);
     slider->setProgress(rating);
 
     slider->setValueChangedListener([this, name](u8 value) {
-      this->ratings[name] = value;
+      this->changedRatings.insert({ name, value });
     });
 
     list->addItem(slider);
@@ -50,8 +51,12 @@ bool GuiRatings::handleInput(
   HidAnalogStickState joyStickPosRight
 ) {
   if (keysDown & HidNpadButton_B) {
-    controller.saveRatings(this->ratings);
-    controller.saveDefaultRating(this->defaultRating);
+    controller.saveRatings(this->changedRatings);
+
+    if (this->defaultRating != this->savedDefaultRating) {
+      controller.saveDefaultRating(this->defaultRating);
+    }
+
     controller.source = "";
     tsl::goBack();
     return true;

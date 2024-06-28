@@ -74,5 +74,5 @@ std::string MetaManager::buildFolderName(const std::string& modName, const u8& r
  */
 bool MetaManager::namesMatch(char* folderName, const std::string& entityName) {
   std::string folderNameStr(folderName);
-  return folderNameStr == parseName(entityName);
+  return parseName(folderNameStr) == entityName;
 }

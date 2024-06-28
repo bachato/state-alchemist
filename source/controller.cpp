@@ -117,7 +117,7 @@ u8 Controller::loadDefaultRating() {
 void Controller::saveRatings(const std::map<std::string, u8>& ratings) {
   for (const auto& [mod, rating]: ratings) {
     std::string currentPath = this->getModPath(mod);
-    std::string newPath = this->getSourcePath() + MetaManager::buildFolderName(mod, rating);
+    std::string newPath = this->getSourcePath() + "/" + MetaManager::buildFolderName(mod, rating);
 
     GuiError::tryResult(
       fsFsRenameFile(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
@@ -130,7 +130,7 @@ void Controller::saveRatings(const std::map<std::string, u8>& ratings) {
  * Saves the rating for using no mod for the current source
  */
 void Controller::saveDefaultRating(const u8& rating) {;
-  std::string newPath = this->getGroupPath() + MetaManager::buildFolderName(this->source, rating);
+  std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(this->source, rating);
 
   GuiError::tryResult(
     fsFsRenameFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getSourcePath()), FsManager::toPathBuffer(newPath)),

@@ -8,8 +8,9 @@
 
 class GuiRatings : public tsl::Gui {
   private:
+    u8 savedDefaultRating;
     u8 defaultRating;
-    std::map<std::string, u8> ratings;
+    std::map<std::string, u8> changedRatings;
 
   public:
     GuiRatings();
