@@ -47,6 +47,16 @@ class Controller {
     u8 loadDefaultRating();
 
     /*
+     * Saves the ratings for each mod
+     */
+    void saveRatings(const std::map<std::string, u8>& ratings);
+
+    /*
+     * Saves the rating for using no mod for the current source
+     */
+    void saveDefaultRating(const u8& rating);
+
+    /*
      * Gets the mod currently activated for the moddable source in the group
      *
      * Returns an empty string if no mod is active and vanilla files are being used

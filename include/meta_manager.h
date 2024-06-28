@@ -20,4 +20,14 @@ namespace MetaManager {
    * Parses a rating of a mod from a folder name
    */
   u8 parseRating(const std::string& folderName);
+
+  /**
+   * Builds a folder name from a mod name and rating
+   */
+  std::string buildFolderName(const std::string& modName, const u8& rating);
+
+  /**
+   * Checks if the entity name belongs to a folder name
+   */
+  bool namesMatch(char* folderName, const std::string& entityName);
 }

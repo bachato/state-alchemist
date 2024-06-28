@@ -50,6 +50,8 @@ bool GuiRatings::handleInput(
   HidAnalogStickState joyStickPosRight
 ) {
   if (keysDown & HidNpadButton_B) {
+    controller.saveRatings(this->ratings);
+    controller.saveDefaultRating(this->defaultRating);
     controller.source = "";
     tsl::goBack();
     return true;

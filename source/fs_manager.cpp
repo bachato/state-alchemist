@@ -85,6 +85,28 @@ std::vector<std::string> FsManager::listNames(const std::string& path) {
 }
 
 /**
+ * Gets the folder name for an entity with the specified name
+ */
+std::string FsManager::getFolderName(const std::string& path, const std::string& name) {
+  std::string folderName;
+  
+  FsDir dir = FsManager::openFolder(path, FsDirOpenMode_ReadDirs);
+
+  FsDirectoryEntry entry;
+  s64 readCount = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
+    if (entry.type == FsDirEntryType_Dir && MetaManager::namesMatch(entry.name, name)) {
+      folderName = entry.name;
+      break;
+    }
+  }
+
+  fsDirClose(&dir);
+
+  return folderName;
+}
+
+/**
  * Records the line parameter in the filePath
  * 
  * offset is expected to be at the end of the file,

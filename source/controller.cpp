@@ -64,6 +64,8 @@ std::vector<std::string> Controller::loadMods() {
 
 /*
  * Loads map of mods names to each rating
+ * 
+ * @requirement: group and source must be set
  */
 std::map<std::string, u8> Controller::loadRatings() {
   std::map<std::string, u8> ratings;
@@ -86,6 +88,8 @@ std::map<std::string, u8> Controller::loadRatings() {
 
 /*
  * Loads the rating for the source (for using no mod)
+ * 
+ * @requirement: group and source must be set
  */
 u8 Controller::loadDefaultRating() {
   u8 rating;
@@ -103,6 +107,35 @@ u8 Controller::loadDefaultRating() {
   fsDirClose(&dir);
 
   return rating;
+}
+
+/*
+ * Saves the ratings for each mod
+ * 
+ * @requirement: group and source must be set
+ */
+void Controller::saveRatings(const std::map<std::string, u8>& ratings) {
+  for (const auto& [mod, rating]: ratings) {
+    std::string currentPath = this->getModPath(mod);
+    std::string newPath = this->getSourcePath() + MetaManager::buildFolderName(mod, rating);
+
+    GuiError::tryResult(
+      fsFsRenameFile(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
+      "fsRatingChange"
+    );
+  }
+}
+
+/*
+ * Saves the rating for using no mod for the current source
+ */
+void Controller::saveDefaultRating(const u8& rating) {;
+  std::string newPath = this->getGroupPath() + MetaManager::buildFolderName(this->source, rating);
+
+  GuiError::tryResult(
+    fsFsRenameFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getSourcePath()), FsManager::toPathBuffer(newPath)),
+    "fsRatingChange"
+  );
 }
 
 /**
@@ -366,7 +399,8 @@ std::string Controller::getGroupPath() {
  * @requirement: group and source must be set
  */
 std::string Controller::getSourcePath() {
-  return this->getGroupPath() + "/" + this->source;
+  std::string groupPath = this->getGroupPath();
+  return groupPath + "/" + FsManager::getFolderName(groupPath, this->source);
 }
 
 /*
@@ -375,7 +409,8 @@ std::string Controller::getSourcePath() {
  * @requirement: group and source must be set
  */
 std::string Controller::getModPath(const std::string& mod) {
-  return this->getSourcePath() + "/" + mod;
+  std::string sourcePath = this->getSourcePath();
+  return sourcePath + "/" + FsManager::getFolderName(sourcePath, mod);
 }
 
 /**

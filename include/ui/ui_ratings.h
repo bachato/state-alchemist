@@ -5,13 +5,11 @@
 
 #include <string>
 #include <map>
-#include <vector>
 
 class GuiRatings : public tsl::Gui {
   private:
     u8 defaultRating;
     std::map<std::string, u8> ratings;
-    std::vector<tsl::elm::TrackBar*> sliders;
 
   public:
     GuiRatings();

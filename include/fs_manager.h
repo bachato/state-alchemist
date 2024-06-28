@@ -35,6 +35,11 @@ namespace FsManager {
   std::vector<std::string> listNames(const std::string& path);
 
   /**
+   * Gets the folder name for an entity with the specified name
+   */
+  std::string getFolderName(const std::string& path, const std::string& name);
+
+  /**
    * Records the line parameter in the filePath
    * 
    * offset is expected to be at the end of the file,
