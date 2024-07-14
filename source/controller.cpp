@@ -77,7 +77,7 @@ std::map<std::string, u8> Controller::loadRatings() {
   while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
     if (entry.type == FsDirEntryType_Dir) {
       std::string mod = MetaManager::parseName(entry.name);
-      ratings[mod] = MetaManager::parseRating(mod);
+      ratings[mod] = MetaManager::parseRating(entry.name);
     }
   }
 
@@ -120,7 +120,7 @@ void Controller::saveRatings(const std::map<std::string, u8>& ratings) {
     std::string newPath = this->getSourcePath() + "/" + MetaManager::buildFolderName(mod, rating);
 
     GuiError::tryResult(
-      fsFsRenameFile(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
+      fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
       "fsRatingChange"
     );
   }
@@ -133,7 +133,7 @@ void Controller::saveDefaultRating(const u8& rating) {;
   std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(this->source, rating);
 
   GuiError::tryResult(
-    fsFsRenameFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getSourcePath()), FsManager::toPathBuffer(newPath)),
+    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(this->getSourcePath()), FsManager::toPathBuffer(newPath)),
     "fsRatingChange"
   );
 }

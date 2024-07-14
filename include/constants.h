@@ -8,7 +8,7 @@
 const s64 FILE_LIST_BUFFER_SIZE = 5;
 
 // Substring to delimit the rating from the mod name in the folder name:
-const std::string RATING_DELIMITER = "**";
+const std::string RATING_DELIMITER = "~~";
 
 const std::string TXT_EXT = ".txt";
 const std::string ALCHEMIST_PATH = "/mod_alchemy/";

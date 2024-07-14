@@ -34,8 +34,8 @@ std::string MetaManager::getHexTitleId(const u64& titleId) {
 std::string MetaManager::parseName(const std::string& folderName) {
   u8 rating = parseRating(folderName);
 
-  if (rating != 100) {
-    return folderName.substr(0, folderName.length() - RATING_DELIMITER.length() - 2);
+  if (rating != 10) {
+    return folderName.substr(0, folderName.length() - RATING_DELIMITER.length() - 1);
   }
 
   return folderName;
@@ -45,25 +45,25 @@ std::string MetaManager::parseName(const std::string& folderName) {
  * Parses a rating of a mod from a folder name
  */
 u8 MetaManager::parseRating(const std::string& folderName) {
-  if (folderName.length() > RATING_DELIMITER.length() + 2) {
-    std::string possibleRating = folderName.substr(folderName.length() - 2);
+  if (folderName.length() > RATING_DELIMITER.length() + 1) {
+    char possibleRating = folderName[folderName.length() - 1];
     std::string possibleDelim = folderName.substr(
-      folderName.length() - RATING_DELIMITER.length() - 2,
+      folderName.length() - RATING_DELIMITER.length() - 1,
       RATING_DELIMITER.length()
     );
 
-    if (std::isdigit(possibleRating[0]) && std::isdigit(possibleRating[1]) && possibleDelim == RATING_DELIMITER) {
-      return std::stoi(possibleRating);
+    if (std::isdigit(possibleRating) && possibleDelim == RATING_DELIMITER) {
+      return static_cast<u8>(possibleRating - '0'); // Convert char to int
     }
   }
-  return 100;
+  return 10;
 }
 
 /**
  * Builds a folder name from a mod name and rating
  */
 std::string MetaManager::buildFolderName(const std::string& modName, const u8& rating) {
-  if (rating == 100) {
+  if (rating == 10) {
     return modName;
   }
   return modName + RATING_DELIMITER + std::to_string(rating);
