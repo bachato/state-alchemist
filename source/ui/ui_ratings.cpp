@@ -1,6 +1,7 @@
 #include "ui/ui_ratings.h"
 
 #include "controller.h"
+#include <fs_manager.h>
 
 GuiRatings::GuiRatings() { }
 
@@ -12,7 +13,7 @@ tsl::elm::Element* GuiRatings::createUI() {
   this->defaultRating = this->savedDefaultRating;
 
   // Used for when no mod is active:
-  auto *defaultSlider = new tsl::elm::StepTrackBar(" ", 11);
+  auto *defaultSlider = new tsl::elm::TrackBar(" ");
   defaultSlider->setProgress(this->defaultRating);
 
   defaultSlider->setValueChangedListener([this](u8 value) {
@@ -29,11 +30,11 @@ tsl::elm::Element* GuiRatings::createUI() {
   for (const auto& [name, rating]: savedRatings) {
     list->addItem(new tsl::elm::CategoryHeader(name));
 
-    auto *slider = new tsl::elm::StepTrackBar(" ", 11);
+    auto slider = new tsl::elm::TrackBar(" ");
     slider->setProgress(rating);
 
     slider->setValueChangedListener([this, name](u8 value) {
-      this->changedRatings.insert({ name, value });
+      this->changedRatings[name] = value;
     });
 
     list->addItem(slider);
