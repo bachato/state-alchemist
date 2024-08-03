@@ -305,6 +305,59 @@ void Controller::deactivateAll() {
 }
 
 /**
+ * Randomly activates/deactivates all mods based upon their ratings
+ */
+void Controller::randomize() {
+  std::vector<std::string> groups = this->loadGroups();
+
+  for (const std::string& group : groups) {
+    this->group = group;
+    std::vector<std::string> sources = this->loadSources();
+
+    for (const std::string& source : sources) {
+      this->source = source;
+      this->pickMod();
+    }
+  }
+
+  this->group = "";
+  this->source = "";
+}
+
+/**
+ * Randomly activates a mod from the current group and source
+ * 
+ * @requirement: group and source must be set
+ */
+void Controller::pickMod() {
+  std::map<std::string, u8> ratings = this->loadRatings();
+  u8 defaultRating = this->loadDefaultRating();
+
+  u16 ratingTotal = defaultRating;
+  for (const auto& [mod, rating]: ratings) {
+    ratingTotal += rating;
+  }
+
+  u16 randomChoice = rand() % ratingTotal;
+
+  if (randomChoice < defaultRating) {
+    this->deactivateMod();
+  } else {
+    randomChoice -= defaultRating;
+
+    for (const auto& [mod, rating]: ratings) {
+      if (randomChoice < rating) {
+        this->deactivateMod();
+        this->activateMod(mod);
+        return;
+      }
+
+      randomChoice -= rating;
+    }
+  }
+}
+
+/**
  * Unmount SD card when destroyed 
  */
 Controller::~Controller() {
@@ -364,6 +417,17 @@ void Controller::returnFiles(const std::string& mod) {
       alchemyPath = this->getModPath(mod) + atmoPath.substr(this->getAtmospherePath().size());
 
       FsManager::moveFile(atmoPath, alchemyPath);
+
+      // Not sure why, but the file needs to be re-opened after each time a file moved:
+      GuiError::tryResult(
+        fsFsOpenFile(
+          &FsManager::sdSystem,
+          FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)),
+          FsOpenMode_Read,
+          &movedFilesList
+        ),
+        "fsReadMoved"
+      );
     }
 
     offset += FILE_LIST_BUFFER_SIZE;

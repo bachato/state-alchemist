@@ -76,6 +76,18 @@ class Controller {
     void deactivateAll();
 
     /**
+     * Randomly activates/deactivates all mods based upon their ratings
+     */
+    void randomize();
+
+    /**
+     * Randomly activates a mod from the current group and source
+     * 
+     * @requirement: group and source must be set
+     */
+    void pickMod();
+
+    /**
      * Unmount SD card when destroyed 
      */
     ~Controller();

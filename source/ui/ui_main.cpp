@@ -1,6 +1,7 @@
 #include "ui/ui_main.h"
 #include "ui/ui_groups.h"
 #include "ui/ui_all_disabled.h"
+#include "ui/ui_random.h"
 
 #include "controller.h"
 #include "constants.h"
@@ -21,6 +22,15 @@ tsl::elm::Element* GuiMain::createUI() {
     frame->setContent(list);
     return frame;
   }
+
+  auto* random = new tsl::elm::ListItem("Randomize");
+  random->setClickListener([](u64 keys) {
+    if (keys & HidNpadButton_A) {
+      tsl::changeTo<GuiRandom>();
+      return true;
+    }
+    return false;
+  });
 
   auto* setMods = new tsl::elm::ListItem("Set Mods");
   setMods->setClickListener([](u64 keys) {
@@ -49,6 +59,7 @@ tsl::elm::Element* GuiMain::createUI() {
     return false;
   });
 
+  list->addItem(random);
   list->addItem(setMods);
   list->addItem(setRatings);
   list->addItem(disableAll);
