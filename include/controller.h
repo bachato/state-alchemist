@@ -122,12 +122,6 @@ class Controller {
     std::string getAtmospherePath();
 
     /**
-     * Builds the path a mod's file should have once we intend to move it into Atmosphere's folder
-     * It is built off of its current path within the Mod Alchemist's directory structure.
-     */
-    std::string getAtmosphereModPath(std::size_t alchemistModFolderPathSize, const std::string& alchemistModFilePath);
-
-    /**
      * Gets the file path for the list of moved files for the specified mod
      * 
      * The file should only exist if the mod is currently active

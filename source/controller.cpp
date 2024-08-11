@@ -196,8 +196,9 @@ void Controller::activateMod(const std::string& mod) {
   // Used for "storing" where the iteration left off at when traversing deeper into the hierarchy:
   std::vector<u64> iStorage;
 
-  // The directory we are currently at:
-  std::string currentDirectory = modPath;
+  // The path we are currently at relative to the mod path.
+  // Empty string is mod path itself:
+  std::string currentBasePath = "";
 
   // Position in the txt file where we should write the next file path:
   s64 txtOffset = 0;
@@ -211,10 +212,6 @@ void Controller::activateMod(const std::string& mod) {
 
   FsDirectoryEntry entry;
 
-  // The entry path we will look at in the following iteration in the loop:
-  std::string nextAlchPath;
-  std::string nextAtmoPath;
-
   FsManager::createFolderIfNeeded(this->getAtmospherePath());
 
   while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry))) {
@@ -225,22 +222,27 @@ void Controller::activateMod(const std::string& mod) {
       i++;
 
       if (readCount > 0) {
-        nextAlchPath = currentDirectory + "/" + entry.name;
-        nextAtmoPath = this->getAtmosphereModPath(modPath.size(), nextAlchPath);
+        std::string nextPath = currentBasePath + "/" + entry.name;
 
         // If the next entry is a file, we will move it and record it as moved as long as there isn't a conflict:
-        if (entry.type == FsDirEntryType_File && !FsManager::doesFileExist(nextAtmoPath)) {
-          FsManager::recordFile(nextAtmoPath + "\n", movedFilesFilePath, txtOffset);
-          FsManager::moveFile(nextAlchPath, nextAtmoPath);
+        if (entry.type == FsDirEntryType_File) {
+
+          // If a file already exists in the location we'll move it to, there's a conflict:
+          bool fileConflict = FsManager::doesFileExist(this->getAtmospherePath() + nextPath);
+          if (!fileConflict) {
+            // Record the file we're moving, and move it:
+            FsManager::recordFile(nextPath + "\n", movedFilesFilePath, txtOffset);
+            FsManager::moveFile(modPath + nextPath, this->getAtmospherePath() + nextPath);
+          }
         // If the next entry is a folder, we will traverse within it:
         } else if (entry.type == FsDirEntryType_Dir) {
-          FsManager::createFolderIfNeeded(nextAtmoPath);
+          FsManager::createFolderIfNeeded(this->getAtmospherePath() + nextPath);
 
           // Add the current count to the storage:
           iStorage.push_back(i);
 
-          currentDirectory = nextAlchPath;
-          FsManager::changeFolder(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
+          currentBasePath = nextPath;
+          FsManager::changeFolder(dir, modPath + nextPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
           // Reset the index & iterator because we're starting in a new folder:
           entryIndex = 0;
@@ -255,9 +257,9 @@ void Controller::activateMod(const std::string& mod) {
         iStorage.pop_back();
 
         // Remove the string portion after the last '/' to get the parent's path:
-        std::size_t lastSlashIndex = currentDirectory.rfind('/');
-        currentDirectory = currentDirectory.substr(0, lastSlashIndex);
-        FsManager::changeFolder(dir, currentDirectory, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
+        std::size_t lastSlashIndex = currentBasePath.rfind('/');
+        currentBasePath = currentBasePath.substr(0, lastSlashIndex);
+        FsManager::changeFolder(dir, modPath + currentBasePath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
         // Reset the entry index because it will start at the beginning again:
         entryIndex = 0;
@@ -389,9 +391,6 @@ void Controller::returnFiles(const std::string& mod) {
   char* buffer = new char[FILE_LIST_BUFFER_SIZE];
   std::string pathBuilder = "";
 
-  std::string atmoPath;
-  std::string alchemyPath;
-
   // As long as there is still data in the file:
   while (offset < fileSize) {
 
@@ -408,15 +407,16 @@ void Controller::returnFiles(const std::string& mod) {
     std::size_t newLinePos = pathBuilder.find('\n');
     if (newLinePos != std::string::npos) {
       // Trim the new line and any characters that were gathered after it to get the cleaned atmosphere file path:
-      atmoPath = pathBuilder.substr(0, newLinePos);
+      std::string basePath = pathBuilder.substr(0, newLinePos);
 
       // Move any characters gathered after the new line to the pathBuilder string for the next path:
       pathBuilder = pathBuilder.substr(newLinePos + 1);
 
-      // The file's original location can be built by replacing the atmosphere portion of the path with alchemy's portion:
-      alchemyPath = this->getModPath(mod) + atmoPath.substr(this->getAtmospherePath().size());
-
-      FsManager::moveFile(atmoPath, alchemyPath);
+      // Move the file back to the mod's folder:
+      FsManager::moveFile(
+        this->getAtmospherePath() + basePath,
+        this->getModPath(mod) + basePath
+      );
 
       // Not sure why, but the file needs to be re-opened after each time a file moved:
       GuiError::tryResult(
@@ -482,14 +482,6 @@ std::string Controller::getModPath(const std::string& mod) {
  */
 std::string Controller::getAtmospherePath() {
   return ATMOSPHERE_PATH + MetaManager::getHexTitleId(this->titleId);
-}
-
-/**
- * Builds the path a mod's file should have once we intend to move it into Atmosphere's folder
- * It is built off of its current path within the Mod Alchemist's directory structure.
- */
-std::string Controller::getAtmosphereModPath(std::size_t alchemistModFolderPathSize, const std::string& alchemistModFilePath) {
-  return this->getAtmospherePath() + alchemistModFilePath.substr(alchemistModFolderPathSize);
 }
 
 /**
