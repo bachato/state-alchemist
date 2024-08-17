@@ -9,7 +9,7 @@ tsl::elm::Element* GuiRatings::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.source);
 
   std::map<std::string, u8> savedRatings = controller.loadRatings();
-  this->savedDefaultRating = controller.loadDefaultRating();
+  this->savedDefaultRating = controller.loadDefaultRating(controller.source);
   this->defaultRating = this->savedDefaultRating;
 
   // Used for when no mod is active:

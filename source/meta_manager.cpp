@@ -32,13 +32,21 @@ std::string MetaManager::getHexTitleId(const u64& titleId) {
  * Parses the name of an entity from a folder name
  */
 std::string MetaManager::parseName(const std::string& folderName) {
-  u8 rating = parseRating(folderName);
+  std::string name = folderName;
 
+  // Remove the rating substring from the folder name if there is one:
+  u8 rating = parseRating(folderName);
   if (rating != 100) {
-    return folderName.substr(0, folderName.length() - RATING_DELIMITER.length() - 2);
+    name = folderName.substr(0, folderName.length() - RATING_DELIMITER.length() - 2);
   }
 
-  return folderName;
+  // Remove the locked character from the folder name if there is one:
+  if (parseLockedStatus(name)) {
+    name = name.substr(1);
+  }
+
+  // Now we have the actual name:
+  return name;
 }
 
 /**
@@ -61,19 +69,33 @@ u8 MetaManager::parseRating(const std::string& folderName) {
 }
 
 /**
+ * Parses whether a source is locked from randomization or not from the source's folder name
+ */
+bool MetaManager::parseLockedStatus(const std::string& folderName) {
+  return folderName[0] == LOCKED_CHAR;
+}
+
+/**
  * Builds a folder name from a mod name and rating
  */
-std::string MetaManager::buildFolderName(const std::string& modName, const u8& rating) {
-  if (rating == 100) {
-    return modName;
+std::string MetaManager::buildFolderName(const std::string& modName, const u8& rating, bool locked) {
+  std::string folderName = modName;
+
+  if (rating != 100) {
+    std::string ratingStr = std::to_string(rating);
+
+    if (rating < 10) {
+      ratingStr.insert(0, "0");
+    }
+
+    folderName += RATING_DELIMITER + ratingStr;
   }
 
-  std::string ratingStr = std::to_string(rating);
-  if (rating < 10) {
-    ratingStr.insert(0, "0");
+  if (locked) {
+    folderName.insert(0, 1, LOCKED_CHAR);
   }
 
-  return modName + RATING_DELIMITER + ratingStr;
+  return folderName;
 }
 
 /**

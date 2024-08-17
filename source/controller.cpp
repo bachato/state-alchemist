@@ -52,6 +52,113 @@ std::vector<std::string> Controller::loadSources() {
   return FsManager::listNames(this->getGroupPath());
 }
 
+/*
+ * Gets a vector of only the sources that are unlocked
+ * 
+ * @requirement: group must be set
+ */
+std::vector<std::string> Controller::loadUnlockedSources() {
+  std::vector<std::string> sources;
+
+  FsDir dir = FsManager::openFolder(this->getGroupPath(), FsDirOpenMode_ReadDirs);
+
+  FsDirectoryEntry entry;
+  s64 readCount = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
+    if (entry.type == FsDirEntryType_Dir && !MetaManager::parseLockedStatus(entry.name)) {
+      sources.push_back(MetaManager::parseName(entry.name));
+    }
+  }
+
+  fsDirClose(&dir);
+
+  return sources;
+}
+
+/*
+ * Checks if the source is locked from randomization
+ *
+ * @requirement: group must be set
+ */
+bool Controller::isSourceLocked(const std::string& source) {
+  bool isLocked;
+
+  FsDir dir = FsManager::openFolder(this->getGroupPath(), FsDirOpenMode_ReadDirs);
+
+  FsDirectoryEntry entry;
+  s64 readCount = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry))) {
+    if (entry.type == FsDirEntryType_Dir && source == MetaManager::parseName(entry.name)) {
+      isLocked = MetaManager::parseLockedStatus(entry.name);
+      break;
+    }
+  }
+
+  fsDirClose(&dir);
+
+  return isLocked;
+}
+
+/*
+ * Load all source options within the specified group along with their lock status
+ * 
+ * @requirement: group must be set
+ */
+std::map<std::string, bool> Controller::loadSourceLocks() {
+  std::map<std::string, bool> locks;
+
+  FsDir dir = FsManager::openFolder(this->getGroupPath(), FsDirOpenMode_ReadDirs);
+
+  FsDirectoryEntry entry;
+  s64 readCount = 0;
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
+    if (entry.type == FsDirEntryType_Dir) {
+      std::string source = MetaManager::parseName(entry.name);
+      locks[source] = MetaManager::parseLockedStatus(entry.name);
+    }
+  }
+
+  fsDirClose(&dir);
+
+  return locks;
+}
+
+/*
+ * Disable randomization for the specified source
+ * 
+ * @requirement: group must be set
+ * @requirement: source must not already be locked
+ */
+void Controller::lockSource(const std::string& source) {
+  u8 rating = this->loadDefaultRating(source);
+
+  std::string currentPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(source, rating, false);
+  std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(source, rating, true);
+
+  GuiError::tryResult(
+    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
+    "fsLock"
+  );
+}
+
+/*
+ * Enable randomization for the specified source
+ * 
+ * @requirement: group must be set
+ * @requirement: source must be currently locked
+ */
+void Controller::unlockSource(const std::string& source) {
+  u8 rating = this->loadDefaultRating(source);
+
+  std::string currentPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(source, rating, true);
+  std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(source, rating, false);
+
+  GuiError::tryResult(
+    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
+    "fsUnlock"
+  );
+}
+
 /**
  * Load all mod options that could be activated for the moddable source in the group
  * 
@@ -89,18 +196,19 @@ std::map<std::string, u8> Controller::loadRatings() {
 /*
  * Loads the rating for the source (for using no mod)
  * 
- * @requirement: group and source must be set
+ * @requirement: group must be set
  */
-u8 Controller::loadDefaultRating() {
+u8 Controller::loadDefaultRating(const std::string& source) {
   u8 rating;
 
   FsDir dir = FsManager::openFolder(this->getGroupPath(), FsDirOpenMode_ReadDirs);
 
   FsDirectoryEntry entry;
   s64 readCount = 0;
-  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry)) && readCount) {
-    if (entry.type == FsDirEntryType_Dir && this->source == MetaManager::parseName(entry.name)) {
+  while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry))) {
+    if (entry.type == FsDirEntryType_Dir && source == MetaManager::parseName(entry.name)) {
       rating = MetaManager::parseRating(entry.name);
+      break;
     }
   }
 
@@ -117,7 +225,7 @@ u8 Controller::loadDefaultRating() {
 void Controller::saveRatings(const std::map<std::string, u8>& ratings) {
   for (const auto& [mod, rating]: ratings) {
     std::string currentPath = this->getModPath(mod);
-    std::string newPath = this->getSourcePath() + "/" + MetaManager::buildFolderName(mod, rating);
+    std::string newPath = this->getSourcePath() + "/" + MetaManager::buildFolderName(mod, rating, false);
 
     GuiError::tryResult(
       fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
@@ -129,8 +237,9 @@ void Controller::saveRatings(const std::map<std::string, u8>& ratings) {
 /*
  * Saves the rating for using no mod for the current source
  */
-void Controller::saveDefaultRating(const u8& rating) {;
-  std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(this->source, rating);
+void Controller::saveDefaultRating(const u8& rating) {
+  bool isLocked = this->isSourceLocked(this->source);
+  std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(this->source, rating, isLocked);
 
   GuiError::tryResult(
     fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(this->getSourcePath()), FsManager::toPathBuffer(newPath)),
@@ -314,7 +423,7 @@ void Controller::randomize() {
 
   for (const std::string& group : groups) {
     this->group = group;
-    std::vector<std::string> sources = this->loadSources();
+    std::vector<std::string> sources = this->loadUnlockedSources();
 
     for (const std::string& source : sources) {
       this->source = source;
@@ -333,18 +442,25 @@ void Controller::randomize() {
  */
 void Controller::pickMod() {
   std::map<std::string, u8> ratings = this->loadRatings();
-  u8 defaultRating = this->loadDefaultRating();
+  u8 defaultRating = this->loadDefaultRating(this->source);
 
+  // Sum all ratings to pick one at random:
   u16 ratingTotal = defaultRating;
   for (const auto& [mod, rating]: ratings) {
     ratingTotal += rating;
   }
 
+  // Just treat it as locked if all ratings are 0 for some reason:
+  if (ratingTotal == 0) { return; }
+
+  // Pick one at random:
   u16 randomChoice = rand() % ratingTotal;
 
-  if (randomChoice < defaultRating) {
+  // If it's within the default option's range, deactivate it:
+  if (randomChoice <= defaultRating) {
     this->deactivateMod();
   } else {
+    // Otherwise, keep subtracting the ratings until we reach the one to activate:
     randomChoice -= defaultRating;
 
     for (const auto& [mod, rating]: ratings) {

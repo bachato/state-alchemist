@@ -50,6 +50,15 @@ tsl::elm::Element* GuiMain::createUI() {
     return false;
   });
 
+  auto* setLocks = new tsl::elm::ListItem("Lock Mods");
+  setRatings->setClickListener([](u64 keys) {
+    if (keys & HidNpadButton_A) {
+      tsl::changeTo<GuiGroups>(EditMode::LOCK);
+      return true;
+    }
+    return false;
+  });
+
   auto* disableAll = new tsl::elm::ListItem("Disable All Mods");
   disableAll->setClickListener([](u64 keys) {
     if (keys & HidNpadButton_A) {
@@ -63,6 +72,7 @@ tsl::elm::Element* GuiMain::createUI() {
   list->addItem(setMods);
   list->addItem(setRatings);
   list->addItem(disableAll);
+  list->addItem(setLocks);
 
   frame->setContent(list);
 
