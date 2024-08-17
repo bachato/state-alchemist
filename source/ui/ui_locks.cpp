@@ -19,10 +19,18 @@ tsl::elm::Element* GuiLocks::createUI() {
     return frame;
   }
 
-  // List all of the group's sources:
+  // List all the group's source with active mods for locking/unlocking:
   for (const auto& [name, locked]: sources) {
-    auto *item = new tsl::elm::ToggleListItem(name, locked);
+    std::string activeMod = controller.getActiveMod(name);
 
+    std::string label;
+    if (activeMod.empty()) {
+      label = name + " - no mod active";
+    } else {
+      label = activeMod + " (" + name + ")";
+    }
+
+    auto *item = new tsl::elm::ToggleListItem(label, locked);
     item->setClickListener([name, locked](u64 keys) {
       if (keys & HidNpadButton_A) {
         if (locked) {

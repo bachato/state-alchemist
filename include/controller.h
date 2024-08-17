@@ -82,7 +82,7 @@ class Controller {
      *
      * Returns an empty string if no mod is active and vanilla files are being used
      */
-    std::string_view getActiveMod();
+    std::string getActiveMod(const std::string& source);
 
     /*
      * Activates the specified mod, moving all its files into the atmosphere folder for the game

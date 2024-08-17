@@ -51,7 +51,7 @@ tsl::elm::Element* GuiMain::createUI() {
   });
 
   auto* setLocks = new tsl::elm::ListItem("Lock Mods");
-  setRatings->setClickListener([](u64 keys) {
+  setLocks->setClickListener([](u64 keys) {
     if (keys & HidNpadButton_A) {
       tsl::changeTo<GuiGroups>(EditMode::LOCK);
       return true;

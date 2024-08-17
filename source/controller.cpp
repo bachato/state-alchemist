@@ -248,23 +248,27 @@ void Controller::saveDefaultRating(const u8& rating) {
 }
 
 /**
- * Gets the mod currently activated for the moddable source in the group
+ * Gets the mod currently activated for the source
  *
  * Returns an empty string if no mod is active and vanilla files are being used
  * 
- * @requirement: group and source must be set
+ * @requirement: group and must be set
  */
-std::string_view Controller::getActiveMod() {
+std::string Controller::getActiveMod(const std::string& source) {
 
   // Open to the correct source directory
-  FsDir sourceDir = FsManager::openFolder(this->getSourcePath(), FsDirOpenMode_ReadFiles);
+  std::string groupPath = this->getGroupPath();
+  FsDir sourceDir = FsManager::openFolder(
+    groupPath + "/" + FsManager::getFolderName(groupPath, source),
+    FsDirOpenMode_ReadFiles
+  );
 
-  // Find the .txt file in the directory. The name would be the active mod:
   FsDirectoryEntry entry;
   s64 readCount = 0;
-  std::string_view activeMod = "";
+  std::string activeMod = "";
   std::string_view name;
 
+  // Find the .txt file in the directory. The name would be the active mod:
   while (R_SUCCEEDED(fsDirRead(&sourceDir, &readCount, 1, &entry)) && readCount) {
     if (entry.type == FsDirEntryType_File) {
       name = entry.name;
@@ -290,7 +294,7 @@ std::string_view Controller::getActiveMod() {
 void Controller::activateMod(const std::string& mod) {
 
   // Skip if already active
-  if (this->getActiveMod() == mod) { return; }
+  if (this->getActiveMod(this->source) == mod) { return; }
 
   // Path to the "mod" folder in alchemy's directory:
   std::string modPath = this->getModPath(mod);
@@ -386,7 +390,7 @@ void Controller::activateMod(const std::string& mod) {
  * @requirement: group and source must be set
  */
 void Controller::deactivateMod() {
-  std::string activeMod(this->getActiveMod());
+  std::string activeMod(this->getActiveMod(this->source));
 
   // If no active mod:
   if (activeMod.empty()) { return; }
@@ -403,7 +407,7 @@ void Controller::deactivateAll() {
 
     for (const std::string& source : sources) {
       this->source = source;
-      std::string activeMod(this->getActiveMod());
+      std::string activeMod(this->getActiveMod(source));
 
       if (!activeMod.empty()) {
         this->returnFiles(activeMod);

@@ -1,5 +1,6 @@
 #include "ui/ui_groups.h"
 #include "ui/ui_sources.h"
+#include "ui/ui_locks.h"
 
 #include "controller.h"
 #include "constants.h"
@@ -27,7 +28,15 @@ tsl::elm::Element* GuiGroups::createUI() {
     item->setClickListener([this, group](u64 keys) {
       if (keys & HidNpadButton_A) {
         controller.group = group;
+
+        // If we're locking/unlocking mods, there's a special page for that:
+        if (this->editMode == EditMode::LOCK) {
+          tsl::changeTo<GuiLocks>();
+          return true;
+        }
+
         tsl::changeTo<GuiSources>(this->editMode);
+
         return true;
       }
       return false;

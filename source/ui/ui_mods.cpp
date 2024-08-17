@@ -10,7 +10,7 @@ tsl::elm::Element* GuiMods::createUI() {
   auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.source);
 
   std::vector<std::string> mods = controller.loadMods();
-  std::string_view activeMod = controller.getActiveMod();
+  std::string_view activeMod = controller.getActiveMod(controller.source);
 
   auto list = new tsl::elm::List();
 
