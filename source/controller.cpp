@@ -266,7 +266,7 @@ std::string Controller::getActiveMod(const std::string& source) {
   FsDirectoryEntry entry;
   s64 readCount = 0;
   std::string activeMod = "";
-  std::string_view name;
+  std::string name;
 
   // Find the .txt file in the directory. The name would be the active mod:
   while (R_SUCCEEDED(fsDirRead(&sourceDir, &readCount, 1, &entry)) && readCount) {
@@ -288,6 +288,8 @@ std::string Controller::getActiveMod(const std::string& source) {
  * Activates the specified mod, moving all its files into the atmosphere folder for the game
  * 
  * Make sure to deactivate any existing active mod for this source if there is one
+ * 
+ * Mod won't be activated if EVERY file belonging to it has a conflict with a file already in the atmosphere folder
  * 
  * @requirement: group and source must be set
  */
@@ -539,6 +541,7 @@ void Controller::returnFiles(const std::string& mod) {
       );
 
       // Not sure why, but the file needs to be re-opened after each time a file moved:
+      fsFileClose(&movedFilesList);
       GuiError::tryResult(
         fsFsOpenFile(
           &FsManager::sdSystem,
@@ -558,7 +561,13 @@ void Controller::returnFiles(const std::string& mod) {
   fsFileClose(&movedFilesList);
 
   // Once all the files have been returned, delete the txt list:
-  fsFsDeleteFile(&FsManager::sdSystem, FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)));
+  GuiError::tryResult(
+    fsFsDeleteFile(
+      &FsManager::sdSystem,
+      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod))
+    ),
+    "deleteMovedFile"
+  );
 }
 
 /*

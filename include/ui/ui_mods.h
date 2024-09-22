@@ -9,6 +9,12 @@ class GuiMods : public tsl::Gui {
   private:
     std::vector<tsl::elm::ToggleListItem*> toggles;
 
+    void activateMod(const std::string& mod, tsl::elm::ToggleListItem* toggle);
+    void deactivateMod(const std::string& mod);
+
+    void activateDefaultMod();
+    void deactivateDefaultMod();
+
   public:
     GuiMods();
 

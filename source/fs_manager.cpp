@@ -85,7 +85,7 @@ std::vector<std::string> FsManager::listNames(const std::string& path) {
 }
 
 /**
- * Gets the folder name for an entity with the specified name
+ * Gets the name of the folder that currently exists with the name of the specified entity
  */
 std::string FsManager::getFolderName(const std::string& path, const std::string& name) {
   std::string folderName;
