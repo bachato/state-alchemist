@@ -6,11 +6,8 @@
 #include <tesla.hpp>
 
 class GuiSources : public tsl::Gui {
-  private:
-    EditMode editMode;
-
   public:
-    GuiSources(EditMode editMode);
+    GuiSources();
 
     virtual tsl::elm::Element* createUI() override;
 

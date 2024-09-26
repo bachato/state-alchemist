@@ -9,11 +9,8 @@
 #include <tesla.hpp>    // The Tesla Header
 
 class GuiGroups : public tsl::Gui {
-  private:
-    EditMode editMode;
-
   public:
-    GuiGroups(EditMode editMode);
+    GuiGroups();
 
     virtual tsl::elm::Element* createUI() override;
 

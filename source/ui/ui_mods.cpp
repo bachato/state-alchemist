@@ -8,13 +8,14 @@
 GuiMods::GuiMods() { }
 
 tsl::elm::Element* GuiMods::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.source);
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", controller.source);
 
   std::vector<std::string> mods = controller.loadMods();
   std::string activeMod = controller.getActiveMod(controller.source);
 
   auto list = new tsl::elm::List();
 
+  list->addItem(new tsl::elm::CategoryHeader("Turn Mods On/Off"));
   // Used to disable any active mod:
   auto *defaultToggle = new tsl::elm::ToggleListItem("Default " + controller.source, activeMod == "");
   defaultToggle->setStateChangedListener([this](bool state) {

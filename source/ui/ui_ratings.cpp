@@ -6,7 +6,7 @@
 GuiRatings::GuiRatings() { }
 
 tsl::elm::Element* GuiRatings::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.source);
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", controller.source);
 
   std::map<std::string, u8> savedRatings = controller.loadRatings();
   this->savedDefaultRating = controller.loadDefaultRating(controller.source);
@@ -21,6 +21,9 @@ tsl::elm::Element* GuiRatings::createUI() {
   });
   
   auto list = new tsl::elm::List();
+
+  list->addItem(new tsl::elm::CategoryHeader("Set how likely each mod is to be picked"));
+  list->addItem(new tsl::elm::CategoryHeader("This is for the \"Pick at Random\" option"));
 
   // Add the default option with the header:
   list->addItem(new tsl::elm::CategoryHeader("Default " + controller.source));

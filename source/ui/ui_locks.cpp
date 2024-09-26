@@ -7,9 +7,13 @@
 GuiLocks::GuiLocks() {}
 
 tsl::elm::Element* GuiLocks::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.group);
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", controller.group);
 
-  auto groupList = new tsl::elm::List();
+  auto list = new tsl::elm::List();
+
+  list->addItem(new tsl::elm::CategoryHeader("Locking Mods"));
+  list->addItem(new tsl::elm::CategoryHeader("This is for the \"Pick at Random\" option"));
+  list->addItem(new tsl::elm::CategoryHeader("Prevents the mod from changing"));
 
   std::map<std::string, bool> sources = controller.loadSourceLocks();
 
@@ -27,7 +31,7 @@ tsl::elm::Element* GuiLocks::createUI() {
     if (activeMod.empty()) {
       label = name + " - no mod active";
     } else {
-      label = activeMod + " (" + name + ")";
+      label = name + " (" + activeMod + ")";
     }
 
     auto *item = new tsl::elm::ToggleListItem(label, locked);
@@ -43,10 +47,10 @@ tsl::elm::Element* GuiLocks::createUI() {
       return false;
     });
 
-    groupList->addItem(item);
+    list->addItem(item);
   }
 
-  frame->setContent(groupList);
+  frame->setContent(list);
   return frame;
 }
 

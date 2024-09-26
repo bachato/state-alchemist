@@ -17,11 +17,4 @@ const std::string TXT_EXT = ".txt";
 const std::string ALCHEMIST_PATH = "/mod_alchemy/";
 const std::string ATMOSPHERE_PATH = "/atmosphere/contents/";
 
-// What's being edited in the GUI
-enum EditMode {
-  TOGGLE,
-  RATING,
-  LOCK
-};
-
 #endif

@@ -5,7 +5,7 @@ GuiError::GuiError(std::string message) {
 }
 
 tsl::elm::Element* GuiError::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Error");
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Error");
   auto list = new tsl::elm::List();
   list->addItem(new tsl::elm::ListItem(this->message));
   frame->setContent(list);

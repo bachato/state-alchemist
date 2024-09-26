@@ -9,12 +9,13 @@
 GuiMain::GuiMain() { }
 
 tsl::elm::Element* GuiMain::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Version 1.0.0");
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 1.0.0");
 
   auto list = new tsl::elm::List();
 
   controller.init();
   
+  // Error message when the game's Folder does not exist or isn't named as the ID:
   if (!controller.doesGameHaveFolder()) {
     list->addItem(new tsl::elm::ListItem("The running game has no folder."));
     list->addItem(new tsl::elm::ListItem("It should be named \"" + controller.getHexTitleId() + "\""));
@@ -23,7 +24,17 @@ tsl::elm::Element* GuiMain::createUI() {
     return frame;
   }
 
-  auto* random = new tsl::elm::ListItem("Randomize");
+  auto* setMods = new tsl::elm::ListItem("View Mod Groups");
+  setMods->setClickListener([](u64 keys) {
+    if (keys & HidNpadButton_A) {
+      tsl::changeTo<GuiGroups>();
+      return true;
+    }
+    return false;
+  });
+  list->addItem(setMods);
+
+  auto* random = new tsl::elm::ListItem("Pick at Random");
   random->setClickListener([](u64 keys) {
     if (keys & HidNpadButton_A) {
       tsl::changeTo<GuiRandom>();
@@ -31,33 +42,10 @@ tsl::elm::Element* GuiMain::createUI() {
     }
     return false;
   });
+  list->addItem(random);
 
-  auto* setMods = new tsl::elm::ListItem("Set Mods");
-  setMods->setClickListener([](u64 keys) {
-    if (keys & HidNpadButton_A) {
-      tsl::changeTo<GuiGroups>(EditMode::TOGGLE);
-      return true;
-    }
-    return false;
-  });
-
-  auto* setRatings = new tsl::elm::ListItem("Randomize Preferences");
-  setRatings->setClickListener([](u64 keys) {
-    if (keys & HidNpadButton_A) {
-      tsl::changeTo<GuiGroups>(EditMode::RATING);
-      return true;
-    }
-    return false;
-  });
-
-  auto* setLocks = new tsl::elm::ListItem("Lock Mods");
-  setLocks->setClickListener([](u64 keys) {
-    if (keys & HidNpadButton_A) {
-      tsl::changeTo<GuiGroups>(EditMode::LOCK);
-      return true;
-    }
-    return false;
-  });
+  // A little extra space above the option for disabling all:
+  list->addItem(new tsl::elm::CategoryHeader(""));
 
   auto* disableAll = new tsl::elm::ListItem("Disable All Mods");
   disableAll->setClickListener([](u64 keys) {
@@ -67,12 +55,7 @@ tsl::elm::Element* GuiMain::createUI() {
     }
     return false;
   });
-
-  list->addItem(random);
-  list->addItem(setMods);
-  list->addItem(setRatings);
   list->addItem(disableAll);
-  list->addItem(setLocks);
 
   frame->setContent(list);
 

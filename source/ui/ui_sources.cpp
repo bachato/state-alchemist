@@ -7,14 +7,12 @@
 
 #include "controller.h"
 
-GuiSources::GuiSources(EditMode editMode) {
-  this->editMode = editMode;
-}
+GuiSources::GuiSources() {}
 
 tsl::elm::Element* GuiSources::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", controller.group);
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", controller.group);
 
-  auto groupList = new tsl::elm::List();
+  auto list = new tsl::elm::List();
 
   std::vector<std::string> sources = controller.loadSources();
 
@@ -24,6 +22,8 @@ tsl::elm::Element* GuiSources::createUI() {
     return frame;
   }
 
+  list->addItem(new tsl::elm::CategoryHeader("\uE0E0 View Mods    |    \uE0E3 View Mod Probabilities"));
+
   // List all of the group's sources:
   for (const std::string &source : sources) {
     auto *item = new tsl::elm::ListItem(source);
@@ -31,21 +31,23 @@ tsl::elm::Element* GuiSources::createUI() {
     item->setClickListener([this, source](u64 keys) {
       if (keys & HidNpadButton_A) {
         controller.source = source;
-
-        if (this->editMode == EditMode::TOGGLE) {
-          tsl::changeTo<GuiMods>();
-        } else if (this->editMode == EditMode::RATING) {
-          tsl::changeTo<GuiRatings>();
-        }
+        tsl::changeTo<GuiMods>();
         return true;
       }
+
+      if (keys & HidNpadButton_Y) {
+        controller.source = source;
+        tsl::changeTo<GuiRatings>();
+        return true;
+      }
+
       return false;
     });
 
-    groupList->addItem(item);
+    list->addItem(item);
   }
 
-  frame->setContent(groupList);
+  frame->setContent(list);
   return frame;
 }
 

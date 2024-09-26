@@ -37,7 +37,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   of a homebrew executable (.nro). This is intended to be used for sysmodules.
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
-APP_TITLE	:=	The Mod Alchemist
+APP_TITLE	:=	State Alchemist
 APP_VERSION :=	1.0.0
 
 TARGET		:=	$(notdir $(CURDIR))

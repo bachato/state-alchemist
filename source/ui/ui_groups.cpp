@@ -5,12 +5,10 @@
 #include "controller.h"
 #include "constants.h"
 
-GuiGroups::GuiGroups(EditMode editMode) {
-  this->editMode = editMode;
-}
+GuiGroups::GuiGroups() {}
 
 tsl::elm::Element* GuiGroups::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("The Mod Alchemist", "Mod Groups");
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Mod Groups");
 
   auto list = new tsl::elm::List();
 
@@ -22,23 +20,25 @@ tsl::elm::Element* GuiGroups::createUI() {
     return frame;
   }
 
+  list->addItem(new tsl::elm::CategoryHeader("\uE0E0 View group content for setting mods"));
+  list->addItem(new tsl::elm::CategoryHeader("\uE0E2 View group content for locking mods"));
+
   for (const std::string &group : groups) {
     auto *item = new tsl::elm::ListItem(group);
 
     item->setClickListener([this, group](u64 keys) {
       if (keys & HidNpadButton_A) {
         controller.group = group;
-
-        // If we're locking/unlocking mods, there's a special page for that:
-        if (this->editMode == EditMode::LOCK) {
-          tsl::changeTo<GuiLocks>();
-          return true;
-        }
-
-        tsl::changeTo<GuiSources>(this->editMode);
-
+        tsl::changeTo<GuiSources>();
         return true;
       }
+
+      if (keys & HidNpadButton_X) {
+        controller.group = group;
+        tsl::changeTo<GuiLocks>();
+        return true;
+      }
+
       return false;
     });
 
