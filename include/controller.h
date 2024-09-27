@@ -21,6 +21,9 @@ class Controller {
 
     bool doesGameHaveFolder();
 
+    // NOTE: vectors returned from functions in controller
+    // are implied to be sorted alphabetically unless stated otherwise
+
     /*
      * Load all groups from the game folder
      */

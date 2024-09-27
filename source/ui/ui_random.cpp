@@ -11,7 +11,7 @@ GuiRandom::GuiRandom() {
 
 tsl::elm::Element* GuiRandom::createUI() {
   auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 1.0.0");
-  frame->setContent(new tsl::elm::ListItem("Randomization Completed"));
+  frame->setContent(new tsl::elm::ListItem("Finished randomly picking!"));
   return frame;
 }
 

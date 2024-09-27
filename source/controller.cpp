@@ -36,6 +36,9 @@ bool Controller::doesGameHaveFolder() {
   return FsManager::doesFolderExist(this->getGamePath());
 }
 
+// NOTE: vectors returned from functions in controller
+// are implied to be sorted alphabetically unless stated otherwise
+
 /**
  * Load all groups from the game folder
  */
@@ -53,7 +56,7 @@ std::vector<std::string> Controller::loadSources() {
 }
 
 /*
- * Gets a vector of only the sources that are unlocked
+ * Gets an unsorted vector of only the sources that are unlocked
  * 
  * @requirement: group must be set
  */

@@ -20,8 +20,7 @@ tsl::elm::Element* GuiGroups::createUI() {
     return frame;
   }
 
-  list->addItem(new tsl::elm::CategoryHeader("\uE0E0 View group content for setting mods"));
-  list->addItem(new tsl::elm::CategoryHeader("\uE0E2 View group content for locking mods"));
+  list->addItem(new tsl::elm::CategoryHeader("\uE0E0 View group    |    \uE0E2 View group (for locking)"));
 
   for (const std::string &group : groups) {
     auto *item = new tsl::elm::ListItem(group);

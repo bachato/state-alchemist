@@ -81,6 +81,8 @@ std::vector<std::string> FsManager::listNames(const std::string& path) {
 
   fsDirClose(&dir);
 
+  std::sort(names.begin(), names.end());
+
   return names;
 }
 
