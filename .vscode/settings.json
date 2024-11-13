@@ -73,7 +73,8 @@
         "forward_list": "cpp",
         "ranges": "cpp",
         "valarray": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "*.inc": "cpp"
     },
     "C_Cpp.intelliSenseEngineFallback": "enabled",
     "makefile.launchConfigurations": [

@@ -6,8 +6,6 @@
 
 #include "ui/ui_error.h"
 
-#include <iomanip>
-
 #include <tesla.hpp>
 
 Controller controller;
@@ -20,6 +18,9 @@ void Controller::init() {
   GuiError::tryResult(pminfoGetProgramId(&this->titleId, processId), "pmInfoPID");
 
   GuiError::tryResult(fsOpenSdCardFileSystem(&FsManager::sdSystem), "fsOpenSD");
+
+  this->o = 0;
+  this->f = FsManager::initFile("/stuff.txt");
 }
 
 /**
@@ -139,7 +140,7 @@ void Controller::lockSource(const std::string& source) {
   std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(source, rating, true);
 
   GuiError::tryResult(
-    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
+    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath).get(), FsManager::toPathBuffer(newPath).get()),
     "fsLock"
   );
 }
@@ -157,7 +158,7 @@ void Controller::unlockSource(const std::string& source) {
   std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(source, rating, false);
 
   GuiError::tryResult(
-    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
+    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath).get(), FsManager::toPathBuffer(newPath).get()),
     "fsUnlock"
   );
 }
@@ -231,7 +232,7 @@ void Controller::saveRatings(const std::map<std::string, u8>& ratings) {
     std::string newPath = this->getSourcePath() + "/" + MetaManager::buildFolderName(mod, rating, false);
 
     GuiError::tryResult(
-      fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath), FsManager::toPathBuffer(newPath)),
+      fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(currentPath).get(), FsManager::toPathBuffer(newPath).get()),
       "fsRatingChange"
     );
   }
@@ -245,7 +246,7 @@ void Controller::saveDefaultRating(const u8& rating) {
   std::string newPath = this->getGroupPath() + "/" + MetaManager::buildFolderName(this->source, rating, isLocked);
 
   GuiError::tryResult(
-    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(this->getSourcePath()), FsManager::toPathBuffer(newPath)),
+    fsFsRenameDirectory(&FsManager::sdSystem, FsManager::toPathBuffer(this->getSourcePath()).get(), FsManager::toPathBuffer(newPath).get()),
     "fsRatingChange"
   );
 }
@@ -287,6 +288,12 @@ std::string Controller::getActiveMod(const std::string& source) {
   return activeMod;
 }
 
+std::string FsDirectoryEntryToString(const FsDirectoryEntry& entry) {
+  std::string name = entry.name;
+  std::string type(1, static_cast<char>(entry.type));
+  return "FsDirectoryEntry:\n  Name: " + name + "\n Type: " + type + "\n  File Size: " + std::to_string(entry.file_size) + " bytes\n  Padding (first 3 bytes): " + std::to_string(entry.pad[0]) + ", " +std::to_string(entry.pad[1]) + ", " + std::to_string(entry.pad[2]) + "\n  Padding2 (first 3 bytes): " + std::to_string(entry.pad2[0]) + ", " + std::to_string(entry.pad2[1]) + ", " + std::to_string(entry.pad2[2]) + "\n";
+}
+
 /**
  * Activates the specified mod, moving all its files into the atmosphere folder for the game
  * 
@@ -303,8 +310,16 @@ void Controller::activateMod(const std::string& mod) {
 
   // Path to the "mod" folder in alchemy's directory:
   std::string modPath = this->getModPath(mod);
-  // Path of the txt file for the active mod:
-  std::string movedFilesFilePath = this->getMovedFilesListFilePath(mod);
+  // The txt file for the active mod:
+  FsFile movedFilesFile = FsManager::initFile(this->getMovedFilesListFilePath(mod));
+
+  FsManager::write(this->f, "Activating mod: " + modPath + "\n", this->o);
+
+  if (FsManager::doesFolderExist(modPath)) {
+    FsManager::write(this->f, "Does Folder exist?: Yes\n", this->o);
+  } else {
+    FsManager::write(this->f, "Does Folder exist?: No\n", this->o);
+  }
 
   FsDir dir = FsManager::openFolder(modPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
@@ -330,6 +345,14 @@ void Controller::activateMod(const std::string& mod) {
 
   FsDirectoryEntry entry;
 
+  FsManager::write(this->f, "Creating folder if needed: " + this->getAtmospherePath() + "\n", this->o);
+
+  if (FsManager::doesFolderExist(this->getAtmospherePath())) {
+    FsManager::write(this->f, "Does Folder exist?: Yes\n", this->o);
+  } else {
+    FsManager::write(this->f, "Does Folder exist?: No\n", this->o);
+  }
+
   FsManager::createFolderIfNeeded(this->getAtmospherePath());
 
   while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry))) {
@@ -343,23 +366,50 @@ void Controller::activateMod(const std::string& mod) {
         std::string nextPath = currentBasePath + "/" + entry.name;
 
         // If the next entry is a file, we will move it and record it as moved as long as there isn't a conflict:
-        if (entry.type == FsDirEntryType_File) {
+        if (entry.type == FsDirEntryType_File && entry.file_size > 0) {
+          FsManager::write(this->f, FsDirectoryEntryToString(entry), this->o);
 
           // If a file already exists in the location we'll move it to, there's a conflict:
           bool fileConflict = FsManager::doesFileExist(this->getAtmospherePath() + nextPath);
+          FsManager::write(this->f, "Checking for conflict...\n", this->o);
           if (!fileConflict) {
+            FsManager::write(this->f, "No conflict...\n", this->o);
             // Record the file we're moving, and move it:
-            FsManager::recordFile(nextPath + "\n", movedFilesFilePath, txtOffset);
+            FsManager::write(movedFilesFile, nextPath + "\n", txtOffset);
+            FsManager::write(this->f, "Recording...\n", this->o);
+            if (FsManager::doesFolderExist(modPath + nextPath)) {
+              FsManager::write(this->f, "Does " + modPath + nextPath + " exist?: Yes\n", this->o);
+            } else {
+              FsManager::write(this->f, "Does " + modPath + nextPath + " exist?: No\n", this->o);
+            }
+            if (FsManager::doesFolderExist(this->getAtmospherePath() + nextPath)) {
+              FsManager::write(this->f, "Does " + this->getAtmospherePath() + nextPath + " exist?: Yes\n", this->o);
+            } else {
+              FsManager::write(this->f, "Does " + this->getAtmospherePath() + nextPath + " exist?: No\n", this->o);
+            }
             FsManager::moveFile(modPath + nextPath, this->getAtmospherePath() + nextPath);
+            FsManager::write(this->f, "Moving...\n", this->o);
           }
         // If the next entry is a folder, we will traverse within it:
         } else if (entry.type == FsDirEntryType_Dir) {
+          if (FsManager::doesFolderExist(this->getAtmospherePath() + nextPath)) {
+            FsManager::write(this->f, "Does " + this->getAtmospherePath() + nextPath + " exist?: Yes\n", this->o);
+          } else {
+            FsManager::write(this->f, "Does " + this->getAtmospherePath() + nextPath + " exist?: No\n", this->o);
+          }
+          FsManager::write(this->f, "Creating THAT folder if needed...\n", this->o);
           FsManager::createFolderIfNeeded(this->getAtmospherePath() + nextPath);
 
           // Add the current count to the storage:
           iStorage.push_back(i);
 
           currentBasePath = nextPath;
+          if (FsManager::doesFolderExist(modPath + nextPath)) {
+            FsManager::write(this->f, "Does " + modPath + nextPath + " exist?: Yes\n", this->o);
+          } else {
+            FsManager::write(this->f, "Does " + modPath + nextPath + " exist?: No\n", this->o);
+          }
+          FsManager::write(this->f, "Change to dah foldy...\n", this->o);
           FsManager::changeFolder(dir, modPath + nextPath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
           // Reset the index & iterator because we're starting in a new folder:
@@ -377,6 +427,12 @@ void Controller::activateMod(const std::string& mod) {
         // Remove the string portion after the last '/' to get the parent's path:
         std::size_t lastSlashIndex = currentBasePath.rfind('/');
         currentBasePath = currentBasePath.substr(0, lastSlashIndex);
+          if (FsManager::doesFolderExist(modPath + currentBasePath)) {
+            FsManager::write(this->f, "Does " + modPath + currentBasePath + " exist?: Yes\n", this->o);
+          } else {
+            FsManager::write(this->f, "Does " + modPath + currentBasePath + " exist?: No\n", this->o);
+          }
+          FsManager::write(this->f, "Change back folder it think...\n", this->o);
         FsManager::changeFolder(dir, modPath + currentBasePath, FsDirOpenMode_ReadDirs | FsDirOpenMode_ReadFiles);
 
         // Reset the entry index because it will start at the beginning again:
@@ -386,6 +442,7 @@ void Controller::activateMod(const std::string& mod) {
 
   }
 
+  fsFileClose(&movedFilesFile);
   fsDirClose(&dir);
 }
 
@@ -428,6 +485,11 @@ void Controller::deactivateAll() {
  * Randomly activates/deactivates all mods based upon their ratings
  */
 void Controller::randomize() {
+
+  // Random num generator
+  std::random_device rd;
+  std::mt19937 generator(rd());
+
   std::vector<std::string> groups = this->loadGroups();
 
   for (const std::string& group : groups) {
@@ -436,7 +498,7 @@ void Controller::randomize() {
 
     for (const std::string& source : sources) {
       this->source = source;
-      this->pickMod();
+      this->pickMod(generator);
     }
   }
 
@@ -449,7 +511,7 @@ void Controller::randomize() {
  * 
  * @requirement: group and source must be set
  */
-void Controller::pickMod() {
+void Controller::pickMod(std::mt19937& randomGenerator) {
   std::map<std::string, u8> ratings = this->loadRatings();
   u8 defaultRating = this->loadDefaultRating(this->source);
 
@@ -462,8 +524,9 @@ void Controller::pickMod() {
   // Just treat it as locked if all ratings are 0 for some reason:
   if (ratingTotal == 0) { return; }
 
-  // Pick one at random:
-  u16 randomChoice = rand() % ratingTotal;
+  // Get the random number 
+  std::uniform_int_distribution<> genDistributor(1, ratingTotal);
+  u16 randomChoice = genDistributor(randomGenerator);
 
   // If it's within the default option's range, deactivate it:
   if (randomChoice <= defaultRating) {
@@ -474,6 +537,12 @@ void Controller::pickMod() {
 
     for (const auto& [mod, rating]: ratings) {
       if (randomChoice < rating) {
+
+        // No need to do anything if the picked mod is also the currently-active one:
+        if (this->getActiveMod(this->source) == mod) {
+          return;
+        }
+
         this->deactivateMod();
         this->activateMod(mod);
         return;
@@ -489,16 +558,23 @@ void Controller::pickMod() {
  */
 Controller::~Controller() {
   fsFsClose(&FsManager::sdSystem);
+  fsFileClose(&this->f);
 }
 
 void Controller::returnFiles(const std::string& mod) {
 
   // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
   FsFile movedFilesList;
+  if (FsManager::doesFolderExist(this->getMovedFilesListFilePath(mod))) {
+    FsManager::write(this->f, "Does " + this->getMovedFilesListFilePath(mod) + " exist?: Yes\n", this->o);
+  } else {
+    FsManager::write(this->f, "Does " + this->getMovedFilesListFilePath(mod) + " exist?: No\n", this->o);
+  }
+  FsManager::write(this->f, "Oppa moved files style...\n", this->o);
   GuiError::tryResult(
     fsFsOpenFile(
       &FsManager::sdSystem,
-      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)),
+      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)).get(),
       FsOpenMode_Read,
       &movedFilesList
     ),
@@ -537,18 +613,31 @@ void Controller::returnFiles(const std::string& mod) {
       // Move any characters gathered after the new line to the pathBuilder string for the next path:
       pathBuilder = pathBuilder.substr(newLinePos + 1);
 
+  if (FsManager::doesFolderExist(this->getAtmospherePath() + basePath)) {
+    FsManager::write(this->f, "Does " + this->getAtmospherePath() + basePath + " exist?: Yes\n", this->o);
+  } else {
+    FsManager::write(this->f, "Does " + this->getAtmospherePath() + basePath + " exist?: No\n", this->o);
+  }
+  if (FsManager::doesFolderExist(this->getModPath(mod) + basePath)) {
+    FsManager::write(this->f, "Does " + this->getModPath(mod) + basePath + " exist?: Yes\n", this->o);
+  } else {
+    FsManager::write(this->f, "Does " + this->getModPath(mod) + basePath + " exist?: No\n", this->o);
+  }
+  FsManager::write(this->f, "Moving just what's above then...\n", this->o);
+
       // Move the file back to the mod's folder:
       FsManager::moveFile(
         this->getAtmospherePath() + basePath,
         this->getModPath(mod) + basePath
       );
+  FsManager::write(this->f, "Reopening...\n", this->o);
 
       // Not sure why, but the file needs to be re-opened after each time a file moved:
       fsFileClose(&movedFilesList);
       GuiError::tryResult(
         fsFsOpenFile(
           &FsManager::sdSystem,
-          FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)),
+          FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)).get(),
           FsOpenMode_Read,
           &movedFilesList
         ),
@@ -563,11 +652,13 @@ void Controller::returnFiles(const std::string& mod) {
 
   fsFileClose(&movedFilesList);
 
+  FsManager::write(this->f, "And gone...\n", this->o);
+
   // Once all the files have been returned, delete the txt list:
   GuiError::tryResult(
     fsFsDeleteFile(
       &FsManager::sdSystem,
-      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod))
+      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)).get()
     ),
     "deleteMovedFile"
   );

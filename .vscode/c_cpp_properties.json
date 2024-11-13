@@ -9,7 +9,8 @@
                 "/opt/devkitpro/portlibs/switch/include/**",
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/libs/atmosphere-libs/libstratosphere/source/dmnt",
-                "${workspaceFolder}/libs/libtesla/include"
+                "${workspaceFolder}/libs/libtesla/include",
+                "/opt/devkitpro/libnx/include/switch"
             ],
             "defines": [
                 "SWITCH",

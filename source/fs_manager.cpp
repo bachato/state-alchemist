@@ -22,7 +22,7 @@ void FsManager::changeFolder(FsDir& dir, const std::string& path, const u32& mod
   fsDirClose(&dir);
 
   GuiError::tryResult(
-    fsFsOpenDirectory(&sdSystem, toPathBuffer(path), mode, &dir),
+    fsFsOpenDirectory(&sdSystem, toPathBuffer(path).get(), mode, &dir),
     "fsOpenDir"
   );
 }
@@ -31,35 +31,49 @@ void FsManager::createFolderIfNeeded(const std::string& path) {
   if (doesFolderExist(path)) { return; }
 
   GuiError::tryResult(
-    fsFsCreateDirectory(&sdSystem, toPathBuffer(path)),
+    fsFsCreateDirectory(&sdSystem, toPathBuffer(path).get()),
     "fsCreateDir"
   );
 }
 
 bool FsManager::doesFolderExist(const std::string& path) {
   FsDir dir;
+  Result result = fsFsOpenDirectory(
+    &sdSystem,
+    toPathBuffer(path).get(),
+    FsOpenMode_Read,
+    &dir
+  );
 
-  // If the directory can be opened, it exists:
-  bool exists = R_SUCCEEDED(fsFsOpenDirectory(&sdSystem, toPathBuffer(path), FsDirOpenMode_ReadFiles, &dir));
-  
-  if (exists) {
+  if (R_SUCCEEDED(result)) {
     fsDirClose(&dir);
+    return true; // File exists
+  } else if (result == 0x202) {
+    return false; // File does not exist
+  } else {
+    GuiError::tryResult(result, "check if directory exists"); // Handle other exceptions
+    return false; // This line will never be reached, but added for completeness
   }
-  
-  return exists;
 }
 
 bool FsManager::doesFileExist(const std::string& path) {
   FsFile file;
+  Result result = fsFsOpenFile(
+    &sdSystem,
+    toPathBuffer(path).get(),
+    FsOpenMode_Read,
+    &file
+  );
 
-  // If the file can be opened, it exists:
-  bool exists = R_SUCCEEDED(fsFsOpenFile(&sdSystem, toPathBuffer(path), FsOpenMode_Read, &file));
-
-  if (exists) {
+  if (R_SUCCEEDED(result)) {
     fsFileClose(&file);
+    return true; // File exists
+  } else if (result == 0x202) {
+    return false; // File does not exist
+  } else {
+    GuiError::tryResult(result, "check if file exists"); // Handle other exceptions
+    return false; // This line will never be reached, but added for completeness
   }
-
-  return exists;
 }
 
 /**
@@ -109,42 +123,49 @@ std::string FsManager::getFolderName(const std::string& path, const std::string&
 }
 
 /**
- * Records the line parameter in the filePath
- * 
- * offset is expected to be at the end of the file,
- * and it's updated to the new position at the end of file
+ * Opens a file at the path (creating it if it doesn't exist)
  */
-void FsManager::recordFile(const std::string& line, const std::string& filePath, s64& offset) {
- 
+FsFile FsManager::initFile(const std::string& path) {
+
   // If the file hasn't been created yet, create it:
-  if (!doesFileExist(filePath)) {
+  if (!doesFileExist(path)) {
     GuiError::tryResult(
-      fsFsCreateFile(&sdSystem, toPathBuffer(filePath), 0, 0),
+      fsFsCreateFile(&sdSystem, toPathBuffer(path).get(), 0, 0),
       "fsCreateMoved"
     );
   }
-  
+
   // Open the file:
-  FsFile movedListFile;
+  FsFile file;
   GuiError::tryResult(
     fsFsOpenFile(
       &sdSystem,
-      toPathBuffer(filePath),
+      toPathBuffer(path).get(),
       FsOpenMode_Write | FsOpenMode_Append,
-      &movedListFile
+      &file
     ),
     "fsWriteMoved"
   );
 
+  return file;
+}
+
+/**
+ * Records the text parameter in the filePath, appending it to the FsFile
+ * 
+ * offset is expected to be at the end of the file,
+ * and it's updated to the new position at the end of file
+ */
+void FsManager::write(FsFile& file, const std::string& text, s64& offset) {
+
   // Write the path to the end of the list:
   GuiError::tryResult(
-    fsFileWrite(&movedListFile, offset, line.c_str(), line.size(), FsWriteOption_Flush),
+    fsFileWrite(&file, offset, text.c_str(), text.size(), FsWriteOption_Flush),
     "fsWritePath"
   );
-  fsFileClose(&movedListFile);
 
   // Update the offset to the end of the file:
-  offset += line.size();
+  offset += text.size();
 }
 
 /**
@@ -152,16 +173,28 @@ void FsManager::recordFile(const std::string& line, const std::string& filePath,
  */
 void FsManager::moveFile(const std::string& fromPath, const std::string& toPath) {
   GuiError::tryResult(
-    fsFsRenameFile(&sdSystem, toPathBuffer(fromPath), toPathBuffer(toPath)),
+    fsFsRenameFile(&sdSystem, toPathBuffer(fromPath).get(), toPathBuffer(toPath).get()),
     "fsMoveFile"
   );
 }
 
 /**
  * Formats a string as a char array that will work properly as a parameter for libnx's filesystem functions
+ * 
+ * Use `get()` when passing it to a libnx function
  */
-char* FsManager::toPathBuffer(const std::string& path) {
-  char* buffer = new char[FS_MAX_PATH];
-  std::strcpy(buffer, path.c_str());
-  return buffer;
+std::unique_ptr<char[]> FsManager::toPathBuffer(const std::string& path) {
+  // Allocate memory for the char array with a fixed size
+  std::unique_ptr<char[]> pathBuffer(new char[FS_MAX_PATH]);
+
+  // Ensure the input fits within FS_MAX_PATH
+  if (path.length() >= FS_MAX_PATH) {
+    tsl::changeTo<GuiError>("Input path exceeds maximum allowed length");
+  }
+
+  // Copy the input string into the buffer
+  std::strcpy(pathBuffer.get(), path.c_str());
+
+  // Return the unique_ptr which will handle garbage collection automatically
+  return pathBuffer;
 }

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <switch.h>
+#include <switch/result.h>
 
 #include <vector>
 #include <string>
+#include <memory>
 
 /**
  * Heper functions related to the filesystem
@@ -40,12 +42,17 @@ namespace FsManager {
   std::string getFolderName(const std::string& path, const std::string& name);
 
   /**
-   * Records the line parameter in the filePath
+   * Opens a file at the path (creating it if it doesn't exist)
+   */
+  FsFile initFile(const std::string& path);
+
+  /**
+   * Records the text parameter in the filePath, appending it to the FsFile
    * 
    * offset is expected to be at the end of the file,
    * and it's updated to the new position at the end of file
    */
-  void recordFile(const std::string& line, const std::string& filePath, s64& offset);
+  void write(FsFile& file, const std::string& text, s64& offset);
 
   /**
    * Changes the fromPath file parameter's location to what's specified as the toPath parameter
@@ -54,6 +61,8 @@ namespace FsManager {
 
   /**
    * Formats a string as a char array that will work properly as a parameter for libnx's filesystem functions
+   * 
+   * Use `get()` when passing it to a libnx function
    */
-  char* toPathBuffer(const std::string& path);
+  std::unique_ptr<char[]> toPathBuffer(const std::string& path);
 }

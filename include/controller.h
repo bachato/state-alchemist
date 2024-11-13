@@ -5,12 +5,15 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <random>
 
 class Controller {
   public:
     u64 titleId; // The current Game's Title ID
     std::string group;
     std::string source;
+    s64 o;
+    FsFile f;
 
     void init();
 
@@ -109,7 +112,7 @@ class Controller {
      * 
      * @requirement: group and source must be set
      */
-    void pickMod();
+    void pickMod(std::mt19937& randomGenerator);
 
     /**
      * Unmount SD card when destroyed 

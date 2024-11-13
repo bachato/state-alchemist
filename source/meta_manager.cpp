@@ -54,17 +54,23 @@ std::string MetaManager::parseName(const std::string& folderName) {
  */
 u8 MetaManager::parseRating(const std::string& folderName) {
   if (folderName.length() > RATING_DELIMITER.length() + 2) {
+
+    // Rating should be the last 2 characters:
     std::string possibleRating = folderName.substr(folderName.length() - 2);
 
+    // The rating also gets delimited, so check that there is a delimitor before the digits as well
     std::string possibleDelim = folderName.substr(
       folderName.length() - RATING_DELIMITER.length() - 2,
       RATING_DELIMITER.length()
     );
 
+    // If the last characters check out as a delimitor with two digits, it's safe to assume those digits are the rating:
     if (std::isdigit(possibleRating[0]) && std::isdigit(possibleRating[1]) && possibleDelim == RATING_DELIMITER) {
       return std::stoi(possibleRating);
     }
   }
+
+  // If no rating is detected in the folder name, use the default rating:
   return 100;
 }
 
