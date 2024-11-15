@@ -5,7 +5,7 @@
 #include <string>
 
 // Small to minimize memory usage
-const s64 FILE_LIST_BUFFER_SIZE = 5;
+const s64 FILE_LIST_BUFFER_SIZE = 30;
 
 // Substring to delimit the rating from the mod name in the folder name:
 const std::string RATING_DELIMITER = "~~";

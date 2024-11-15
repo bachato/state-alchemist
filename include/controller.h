@@ -119,6 +119,11 @@ class Controller {
 
   private:
 
+    /**
+     * Returns all files belonging to a mod from the atmosphere active mods folder to their original location
+     * 
+     * Essentially the same as deactivating the mod, except this can't be used with the default mod option.
+     */
     void returnFiles(const std::string& mod);
 
     /**

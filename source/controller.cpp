@@ -18,6 +18,9 @@ void Controller::init() {
   GuiError::tryResult(pminfoGetProgramId(&this->titleId, processId), "pmInfoPID");
 
   GuiError::tryResult(fsOpenSdCardFileSystem(&FsManager::sdSystem), "fsOpenSD");
+
+  // Create the Atmosphere title ID folder for the current game
+  FsManager::createFolderIfNeeded(this->getAtmospherePath());
 }
 
 /**
@@ -298,12 +301,12 @@ std::string FsDirectoryEntryToString(const FsDirectoryEntry& entry) {
  * 
  * Mod won't be activated if EVERY file belonging to it has a conflict with a file already in the atmosphere folder
  * 
- * @requirement: group and source must be set
+ * @requirement:
+ *  - group and source must be set
+ *  - "mod" parameter must not currently be active
+ *  - the title ID folder for the current game must already exist in Atmosphere's "content" folder
  */
 void Controller::activateMod(const std::string& mod) {
-
-  // Skip if already active
-  if (this->getActiveMod(this->source) == mod) { return; }
 
   // Path to the "mod" folder in alchemy's directory:
   std::string modPath = this->getModPath(mod);
@@ -333,8 +336,6 @@ void Controller::activateMod(const std::string& mod) {
   s64 readCount = 0;
 
   FsDirectoryEntry entry;
-
-  FsManager::createFolderIfNeeded(this->getAtmospherePath());
 
   while (R_SUCCEEDED(fsDirRead(&dir, &readCount, 1, &entry))) {
 
@@ -486,13 +487,16 @@ void Controller::pickMod() {
 
     for (const auto& [mod, rating]: ratings) {
       if (randomChoice < rating) {
+        std::string activeMod = this->getActiveMod(this->source);
 
         // No need to do anything if the picked mod is also the currently-active one:
-        if (this->getActiveMod(this->source) == mod) {
-          return;
+        if (activeMod == mod) { return; }
+
+        // If there's an active mod, deactivate it:
+        if (activeMod.empty()) {
+          this->returnFiles(activeMod);
         }
 
-        this->deactivateMod();
         this->activateMod(mod);
         return;
       }
@@ -509,17 +513,20 @@ Controller::~Controller() {
   fsFsClose(&FsManager::sdSystem);
 }
 
+/**
+ * Returns all files belonging to a mod from the atmosphere active mods folder to their original location
+ * 
+ * Essentially the same as deactivating the mod, except this can't be used with the default mod option.
+ */
 void Controller::returnFiles(const std::string& mod) {
+
+  std::unique_ptr<char[]> movedFilesListPath = FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod));
+  std::string modPath = this->getModPath(mod);
 
   // Try to open the active mod's txt file to get the list of files that were moved to atmosphere's folder:
   FsFile movedFilesList;
   GuiError::tryResult(
-    fsFsOpenFile(
-      &FsManager::sdSystem,
-      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)).get(),
-      FsOpenMode_Read,
-      &movedFilesList
-    ),
+    fsFsOpenFile(&FsManager::sdSystem, movedFilesListPath.get(), FsOpenMode_Read, &movedFilesList),
     "fsReadMoved"
   );
 
@@ -529,7 +536,7 @@ void Controller::returnFiles(const std::string& mod) {
     "fsMovedSize"
   );
 
-  // Small buffer to stream the file a small number of bytes at a time to minimize memory consumption:
+  // Initialize buffer and path builder:
   s64 offset = 0;
   char* buffer = new char[FILE_LIST_BUFFER_SIZE];
   std::string pathBuilder = "";
@@ -558,18 +565,13 @@ void Controller::returnFiles(const std::string& mod) {
       // Move the file back to the mod's folder:
       FsManager::moveFile(
         this->getAtmospherePath() + basePath,
-        this->getModPath(mod) + basePath
+        modPath + basePath
       );
 
       // Not sure why, but the file needs to be re-opened after each time a file moved:
       fsFileClose(&movedFilesList);
       GuiError::tryResult(
-        fsFsOpenFile(
-          &FsManager::sdSystem,
-          FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)).get(),
-          FsOpenMode_Read,
-          &movedFilesList
-        ),
+        fsFsOpenFile(&FsManager::sdSystem, movedFilesListPath.get(), FsOpenMode_Read, &movedFilesList),
         "fsReadMoved"
       );
     }
@@ -583,10 +585,7 @@ void Controller::returnFiles(const std::string& mod) {
 
   // Once all the files have been returned, delete the txt list:
   GuiError::tryResult(
-    fsFsDeleteFile(
-      &FsManager::sdSystem,
-      FsManager::toPathBuffer(this->getMovedFilesListFilePath(mod)).get()
-    ),
+    fsFsDeleteFile(&FsManager::sdSystem, movedFilesListPath.get()),
     "deleteMovedFile"
   );
 }
