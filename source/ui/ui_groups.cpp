@@ -12,7 +12,7 @@ tsl::elm::Element* GuiGroups::createUI() {
 
   auto list = new tsl::elm::List();
 
-  std::vector<std::string> groups = controller.loadGroups();
+  std::vector<std::string> groups = controller.loadGroups(true);
 
   // When there are no groups for some odd reason:
   if (groups.empty()) {

@@ -79,8 +79,11 @@ bool FsManager::doesFileExist(const std::string& path) {
 /**
  * Gets a vector of all entity names that are directly within the specified path
  * (parsing the name from the folder name)
+ * 
+ * @param sort Whether to sort the list of names alphabetically or not
+ *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
  */
-std::vector<std::string> FsManager::listNames(const std::string& path) {
+std::vector<std::string> FsManager::listNames(const std::string& path, bool sort) {
   std::vector<std::string> names;
 
   FsDir dir = FsManager::openFolder(path, FsDirOpenMode_ReadDirs);
@@ -95,7 +98,9 @@ std::vector<std::string> FsManager::listNames(const std::string& path) {
 
   fsDirClose(&dir);
 
-  std::sort(names.begin(), names.end());
+  if (sort) {
+    std::sort(names.begin(), names.end());
+  }
 
   return names;
 }
@@ -126,11 +131,12 @@ std::string FsManager::getFolderName(const std::string& path, const std::string&
  * Opens a file at the path (creating it if it doesn't exist)
  */
 FsFile FsManager::initFile(const std::string& path) {
+  std::unique_ptr<char[]> charPath = toPathBuffer(path);
 
   // If the file hasn't been created yet, create it:
   if (!doesFileExist(path)) {
     GuiError::tryResult(
-      fsFsCreateFile(&sdSystem, toPathBuffer(path).get(), 0, 0),
+      fsFsCreateFile(&sdSystem, charPath.get(), 0, 0),
       "fsCreateMoved"
     );
   }
@@ -138,12 +144,7 @@ FsFile FsManager::initFile(const std::string& path) {
   // Open the file:
   FsFile file;
   GuiError::tryResult(
-    fsFsOpenFile(
-      &sdSystem,
-      toPathBuffer(path).get(),
-      FsOpenMode_Write | FsOpenMode_Append,
-      &file
-    ),
+    fsFsOpenFile( &sdSystem, charPath.get(), FsOpenMode_Write | FsOpenMode_Append, &file),
     "fsWriteMoved"
   );
 

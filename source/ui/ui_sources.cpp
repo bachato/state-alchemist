@@ -14,7 +14,7 @@ tsl::elm::Element* GuiSources::createUI() {
 
   auto list = new tsl::elm::List();
 
-  std::vector<std::string> sources = controller.loadSources();
+  std::vector<std::string> sources = controller.loadSources(true);
 
   // For when the group is empty for some reason:
   if (sources.empty()) {

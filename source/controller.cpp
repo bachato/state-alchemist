@@ -42,18 +42,24 @@ bool Controller::doesGameHaveFolder() {
 
 /**
  * Load all groups from the game folder
+ * 
+ * @param sort Whether to sort the list of names alphabetically or not
+ *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
  */
-std::vector<std::string> Controller::loadGroups() {
-  return FsManager::listNames(this->getGamePath());
+std::vector<std::string> Controller::loadGroups(bool sort) {
+  return FsManager::listNames(this->getGamePath(), sort);
 }
 
 /**
  * Load all source options within the specified group
  * 
+ * @param sort Whether to sort the list of names alphabetically or not
+ *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
+ * 
  * @requirement: group must be set
  */
-std::vector<std::string> Controller::loadSources() {
-  return FsManager::listNames(this->getGroupPath());
+std::vector<std::string> Controller::loadSources(bool sort) {
+  return FsManager::listNames(this->getGroupPath(), sort);
 }
 
 /*
@@ -166,10 +172,13 @@ void Controller::unlockSource(const std::string& source) {
 /**
  * Load all mod options that could be activated for the moddable source in the group
  * 
+ * @param sort Whether to sort the list of names alphabetically or not
+ *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
+ * 
  * @requirement: group and source must be set
  */
-std::vector<std::string> Controller::loadMods() {
-  return FsManager::listNames(this->getSourcePath());
+std::vector<std::string> Controller::loadMods(bool sort) {
+  return FsManager::listNames(this->getSourcePath(), sort);
 }
 
 
@@ -413,11 +422,11 @@ void Controller::deactivateMod() {
 }
 
 void Controller::deactivateAll() {
-  std::vector<std::string> groups = this->loadGroups();
+  std::vector<std::string> groups = this->loadGroups(false);
 
   for (const std::string& group : groups) {
     this->group = group;
-    std::vector<std::string> sources = this->loadSources();
+    std::vector<std::string> sources = this->loadSources(false);
 
     for (const std::string& source : sources) {
       this->source = source;
@@ -441,7 +450,7 @@ void Controller::randomize() {
   // Seed the random number generator with the current time
   std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-  std::vector<std::string> groups = this->loadGroups();
+  std::vector<std::string> groups = this->loadGroups(false);
 
   for (const std::string& group : groups) {
     this->group = group;

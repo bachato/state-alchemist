@@ -33,8 +33,11 @@ namespace FsManager {
   /**
    * Gets a vector of all entity names that are directly within the specified path
    * (parsing the name from the folder name)
+   * 
+   * @param sort Whether to sort the list of names alphabetically or not
+   *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
    */
-  std::vector<std::string> listNames(const std::string& path);
+  std::vector<std::string> listNames(const std::string& path, bool sort);
 
   /**
    * Gets the folder name for an entity with the specified name

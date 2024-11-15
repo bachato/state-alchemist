@@ -27,13 +27,19 @@ class Controller {
 
     /*
      * Load all groups from the game folder
+     * 
+     * @param sort Whether to sort the list of names alphabetically or not
+     *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
      */
-    std::vector<std::string> loadGroups();
+    std::vector<std::string> loadGroups(bool sort);
 
     /*
      * Load all source options within the specified group
+     * 
+     * @param sort Whether to sort the list of names alphabetically or not
+     *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
      */
-    std::vector<std::string> loadSources();
+    std::vector<std::string> loadSources(bool sort);
 
     /*
      * Gets a vector of only the sources that are unlocked
@@ -58,8 +64,11 @@ class Controller {
 
     /*
      * Load all mod options that could be activated for the moddable source in the group
+     * 
+     * @param sort Whether to sort the list of names alphabetically or not
+     *             Can take considerable performance when in nested loops, so sometimes it's good to skip if not needed
      */
-    std::vector<std::string> loadMods();
+    std::vector<std::string> loadMods(bool sort);
 
     /*
      * Loads map of mods names to each rating
