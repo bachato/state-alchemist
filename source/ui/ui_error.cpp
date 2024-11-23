@@ -33,8 +33,7 @@ bool GuiError::handleInput(
  */
 void GuiError::tryResult(const Result& r, const std::string& alchemyCode) {
   if (R_FAILED(r)) {
-    fatalThrow(r);
-    //tsl::changeTo<GuiError>("Error: " + alchemyCode + " " + std::to_string(r));
-    //abort();
+    tsl::changeTo<GuiError>("Error: " + alchemyCode + " " + std::to_string(r));
+    abort();
   }
 }
