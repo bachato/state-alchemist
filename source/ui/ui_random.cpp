@@ -3,15 +3,45 @@
 #include "controller.h"
 
 /**
- * Randomly activates/deactivates all mods
+ * UI for activating / deactivating mods at random
  */
-GuiRandom::GuiRandom() {
-  controller.randomize();
-}
+GuiRandom::GuiRandom() {}
 
 tsl::elm::Element* GuiRandom::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 1.0.0");
-  frame->setContent(new tsl::elm::ListItem("Finished randomly picking!"));
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Random Mods");
+  this->items = new tsl::elm::List();
+
+  this->items->addItem(new tsl::elm::CategoryHeader("This will enable mods at random"));
+  this->items->addItem(new tsl::elm::CategoryHeader("Tesla menu will freeze briefly"));
+  this->items->addItem(new tsl::elm::CategoryHeader("(up to a minute if there are many mods)"));
+  this->items->addItem(new tsl::elm::CategoryHeader("This menu will change when it is done"));
+
+  auto* no = new tsl::elm::ListItem("Cancel");
+  no->setClickListener([](u64 keys) {
+    if (keys & HidNpadButton_A) {
+      tsl::goBack();
+      return true;
+    }
+    return false;
+  });
+
+  this->yes = new tsl::elm::ListItem("OK");
+  this->yes->setClickListener([this](u64 keys) {
+    if (keys & HidNpadButton_A) {
+      controller.deactivateAll();
+      removeFocus(this->yes);
+      this->items->clear();
+      this->items->addItem(new tsl::elm::ListItem("Finished!"));
+      return true;
+    }
+    return false;
+  });
+
+  this->items->addItem(no);
+  this->items->addItem(this->yes);
+
+  frame->setContent(this->items);
+
   return frame;
 }
 
@@ -22,7 +52,7 @@ bool GuiRandom::handleInput(
   HidAnalogStickState joyStickPosLeft,
   HidAnalogStickState joyStickPosRight
 ) {
-  if (keysDown & (HidNpadButton_B | HidNpadButton_A)) {
+  if (keysDown & HidNpadButton_B) {
     tsl::goBack();
     return true;
   }

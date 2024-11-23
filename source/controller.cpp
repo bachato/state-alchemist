@@ -297,12 +297,6 @@ std::string Controller::getActiveMod(const std::string& source) {
   return activeMod;
 }
 
-std::string FsDirectoryEntryToString(const FsDirectoryEntry& entry) {
-  std::string name = entry.name;
-  std::string type(1, static_cast<char>(entry.type));
-  return "FsDirectoryEntry:\n  Name: " + name + "\n Type: " + type + "\n  File Size: " + std::to_string(entry.file_size) + " bytes\n  Padding (first 3 bytes): " + std::to_string(entry.pad[0]) + ", " +std::to_string(entry.pad[1]) + ", " + std::to_string(entry.pad[2]) + "\n  Padding2 (first 3 bytes): " + std::to_string(entry.pad2[0]) + ", " + std::to_string(entry.pad2[1]) + ", " + std::to_string(entry.pad2[2]) + "\n";
-}
-
 /**
  * Activates the specified mod, moving all its files into the atmosphere folder for the game
  * 
@@ -502,7 +496,7 @@ void Controller::pickMod() {
         if (activeMod == mod) { return; }
 
         // If there's an active mod, deactivate it:
-        if (activeMod.empty()) {
+        if (!activeMod.empty()) {
           this->returnFiles(activeMod);
         }
 

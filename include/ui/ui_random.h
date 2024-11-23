@@ -4,9 +4,13 @@
 #include <tesla.hpp>    // The Tesla Header
 
 /**
- * Randomly activates/deactivates all mods
+ * UI for activating / deactivating mods at random
  */
 class GuiRandom : public tsl::Gui {
+  private:
+    tsl::elm::List* items;
+    tsl::elm::ListItem* yes;
+    
   public:
     GuiRandom();
 

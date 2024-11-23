@@ -2,9 +2,7 @@
 
 #include "controller.h"
 
-GuiAllDisabled::GuiAllDisabled() {
-  controller.deactivateAll();
-}
+GuiAllDisabled::GuiAllDisabled() {}
 
 tsl::elm::Element* GuiAllDisabled::createUI() {
   auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 1.0.0");

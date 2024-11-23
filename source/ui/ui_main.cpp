@@ -45,7 +45,7 @@ tsl::elm::Element* GuiMain::createUI() {
   list->addItem(random);
 
   // A little extra space above the option for disabling all:
-  list->addItem(new tsl::elm::CategoryHeader(""));
+  list->addItem(new tsl::elm::CategoryHeader("-------------------------"));
 
   auto* disableAll = new tsl::elm::ListItem("Disable All Mods");
   disableAll->setClickListener([](u64 keys) {
