@@ -28,7 +28,7 @@ tsl::elm::Element* GuiRandom::createUI() {
   this->yes = new tsl::elm::ListItem("OK");
   this->yes->setClickListener([this](u64 keys) {
     if (keys & HidNpadButton_A) {
-      controller.deactivateAll();
+      controller.randomize();
       removeFocus(this->yes);
       this->items->clear();
       this->items->addItem(new tsl::elm::ListItem("Finished!"));
