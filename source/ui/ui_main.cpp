@@ -57,6 +57,8 @@ tsl::elm::Element* GuiMain::createUI() {
   });
   list->addItem(disableAll);
 
+  list->addItem(new tsl::elm::CategoryHeader("RELAUNCH GAME AFTER ANY CHANGES"));
+
   frame->setContent(list);
 
   return frame;

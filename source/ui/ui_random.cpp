@@ -28,10 +28,24 @@ tsl::elm::Element* GuiRandom::createUI() {
   this->yes = new tsl::elm::ListItem("OK");
   this->yes->setClickListener([this](u64 keys) {
     if (keys & HidNpadButton_A) {
+
+      // Begin randomly choosing mods
       controller.randomize();
       removeFocus(this->yes);
       this->items->clear();
-      this->items->addItem(new tsl::elm::ListItem("Finished!"));
+
+      // Create new form for when randomization finishes
+      auto* finished = new tsl::elm::ListItem("Finished!");
+      finished->setClickListener([](u64 keys) {
+        if (keys & HidNpadButton_A) {
+          tsl::goBack();
+          return true;
+        }
+        return false;
+      });
+
+      this->items->addItem(finished);
+      this->items->addItem(new tsl::elm::CategoryHeader("Please relaunch game now"));
       return true;
     }
     return false;
