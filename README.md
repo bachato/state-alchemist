@@ -26,11 +26,11 @@ State Alchemist is a Nintendo Switch homebrew management app for Nintendo Switch
 
 # Features
 
-* **Speed**: Can enable or disable even large files (such as music and video mods) almost instantly*
+* **Speed**: When enabling mods, State Alchecmist moves the files instead of copying and pasting them, so even large files (such as music and video mods) can be toggled almost instantly* It's better for your SD card too.
 
 * **Organization**: The overlay will only show mods for the currently-running game. Those mods are then organized into custom groups.
 
-* **Random Selections**: The overlay can enable and disable all the mods at random. You also have complete control over the random process: You can "lock" mods (preventing a mod from being enabled or disabled at random) OR set how likely you want each mod to be enabled.
+* **Random Selections**: The overlay can enable and disable all the mods at random. You also have complete control over the random process: You can "lock" mods (preventing a mod from changing) OR set how likely you want each mod to be enabled.
 
 * **Memory Efficient**: A common problem with Tesla overlays are memory overflow errors (frequency dependent on the Switch game and how much memory is used at a point in time). Keeping memory usage minimal has been a top priority in this overlay's development, ensuring that this problem should be rare.
 
@@ -58,9 +58,9 @@ Tesla must be installed on your SD card to use State Alchemist.
 
 7. In each of those folders created in step 6, create a folder for each mod you have. For example, if you have a mod that replaces Mario with Spongebob, you would want to created a folder named "Spongebob" in a folder like `mod_alchemy/<title_id>/Characters/Mario/`. Then create folders for the names of any other mods you have that replace Mario in the `Mario` folder.
 
-8. In each of those folders created in step 7, place the folders with the files for each mod in that folder. For example, if you have a mod that replaces Mario with Spongebob, you would want to place the folder structure for the "Spongebob" mod in a folder like `mod_alchemy/<title_id>/Characters/Mario/Spongebob/`. In most cases, a mod's file structure should start with a folder named `romfs`, so there should be a `mod_alchemy/<title_id>/Characters/Mario/Spongebob/romfs/` folder which would then contain the rest of the folders and files that make up the mod. The folder structure must match the game's filesystem.
+8. In each of those folders created in step 7, place the folders with the files for each mod in that folder. For example, if you have a mod that replaces Mario with Spongebob, you would want to place the folder structure for the "Spongebob" mod in a folder like `mod_alchemy/<title_id>/Characters/Mario/Spongebob/`. In most cases, a mod's file structure should start with a folder named `romfs`, so there should be a `mod_alchemy/<title_id>/Characters/Mario/Spongebob/romfs/` folder which would then contain the rest of the folders and files that make up the mod. The folder structure should match the game's filesystem.
 
-9. Remove any files that are currently in the `/atmosphere/contents/<title_id>/` folder that may conflict with files from any mods that you set up in step 8. If you want to keep them, move them to a mod folder under `mod_alchemy` created in the manner described in steps 5-8. If you don't feel very sure of what you're doing, it's a good idea to create a backup of `/atmosphere/contents/<title_id>/`.
+9. Remove any files that are currently in the `/atmosphere/contents/<title_id>/` folder that may conflict with files from any mods that you set up in step 8. If you want to keep them, move them to a mod folder within `mod_alchemy` created in the manner described in steps 5-8. If you don't feel very sure of what you're doing, it's a good idea to create a backup of `/atmosphere/contents/<title_id>/`.
 
 10. Create a backup of the `mod_alchemy/<title_id>/`. State Alchemist operates by moving files between `mod_alchemy/<title_id>/` and `/atmosphere/contents/<title_id>/`. If you ever disable all the mods in State Alchemist, it should bring all the mod files back to the folders under `mod_alchemy/<title_id>/`, but I make no guarantee that there won't be a problem that will prevent that, so I recommend backing up those folders and files **before you start using State Alchemist** just to be safe.
 
@@ -72,7 +72,7 @@ Mods can be added to State Alchemist at any time using the same instructions lis
 
 ### Deleting Mods
 
-If there ever is a mod you're using with State Alchemist that you want to delete permanently, **make sure to disable that mod in State Alchemist first** if it isn't already disabled.
+If there ever is a mod you're using with State Alchemist that you want to delete permanently, **make sure to disable that mod in State Alchemist first** if it isn't already disabled. This will make sure all files for that mod are returned to their original locations within the folders in `mod_alchemy`.
 
 Once you're sure it's disabled, deleting the mod is as easy as deleting the `mod_alchemy/<title_id>/<group_name>/<thing_being_modded>/<mod_name>` folder belonging to it from your SD card.
 
@@ -96,9 +96,9 @@ After opening State Alchemist, you will be greeted with 3 menu options:
   
   * All items listed from each group correspond to the folders created in step 6 of the installation instructions.
   
-* **Pick at Random**: This will change all of your mods at random. **Make sure to reboot the game when the random feature finishes**. Also **avoid using this feature at any point when the game may be loading**.
+* **Pick at Random**: Changes all mods at random. **Make sure to reboot the game when the random feature finishes**. Also **avoid using this feature at any point when the game may be loading**.
 
-* **Disable All Mods**: This will turn off all mods you currently have enabled in State Alchemist. **Make sure to reboot the game when it finishes**. Also **avoid using this feature at any point when the game may be loading**.
+* **Disable All Mods**: Turns off all mods that are currently enabled. **Make sure to reboot the game when it finishes**. Also **avoid using this feature at any point when the game may be loading**.
 
 # Help / FAQs
 
@@ -110,9 +110,13 @@ Try removing all the other `.ovl` overlay files from your SD card (except the ma
 
 If it still has that same issue, please file a GitHub Issue and describe the problem in detail.
 
+---
+
 ### State Alchemist claims the game folder does not exist
 
 Make sure you named the folder you created in step 4 in the **Installation Instructions** correctly. Make sure the folder's name really is the correct title ID for that game.
+
+---
 
 ### After enabling a mod, I don't notice it in the game.
 
@@ -122,9 +126,13 @@ If you did, disable the mod in State Alchemist. Then in a file explorer, go to t
 
 Make sure the folders and files are all named correctly. The folder directly in the `mod_alchemy/<title_id>/<group_name>/<thing_being_modded>/<mod_name>/` folder should usually be named `romfs`. `romfs` should contain more folders matching the game's file system. Make sure the mod's files are named properly and in the correct folders.
 
+---
+
 ### After changing or disabling a mod, the game crashes the moment the mod would normally be loaded, but I know the mod should work fine.
 
 Make sure to reboot the game after enabling it.
+
+---
 
 ### The game crashed while having State Alchemist pick mods as random
 
@@ -135,6 +143,8 @@ If you're not sure if the game is loading or not, trying using the random featur
 If the game continues to crash when using the random feature, try locking all the mods except one. Try the random feature again. If it works, try unlocking a few more mods. See if it works again. Repeat until you can narrow down a problematic mod.
 
 If you're sure there's no problematic mod, feel free to file a GitHub Issue. Mention the game you're using, the approximate amount of time it takes for the random feature to cause a crash, the kinds of mods you are using, and any peculiar details that can be shared.
+
+---
 
 ### Mod is only being partially enabled. Not all files belonging to that mod were enabled.
 
@@ -154,6 +164,8 @@ It seems to be out of the control of State Alchemist, so there may be nothing th
 
 But even if this bug occurs, the rest of the files should still be moving properly when enabling or disabling the mod, so there should be no need to worry about lost files.
 
+---
+
 ### The menu options are weird or messed up. Maybe I'm seeing an option named "romfs" in the menu.
 
 The folder structure in the `mod_alchemy` folder is probably not set up correctly.
@@ -163,6 +175,8 @@ If you tried enabling any mods in the menu (or if you're not sure if you did), f
 Review steps 5-9 in the installation instructions.
 
 Make sure all the mods are set up in the following manner in the following folder structure: `mod_alchemy/<title_id>/<group_name>/<thing_being_modded>/<mod_name>/romfs/<mod folders and files here>`
+
+---
 
 ### Tesla froze for a while when I tried to enable a mod.
 
@@ -176,9 +190,13 @@ Using such large mods (such as mod packs) isn't recommended with State Alchemist
 
 If the mod doesn't consist of that many files, you may want to double-check it. Go to the `/atmosphere/contents/<title_id>/` folder on your SD card if the mod is active (`mod_alchemy/<title_id>/<group_name>/<thing_being_modded>/<mod_name>/` if it's not active) and look through the folders and files the mod consists of. See if there are a large number of files that shouldn't be there. Follow the instructions in the **Deleting Mods** section to remove it.
 
+---
+
 ### I was taken to an error menu while using State Alchemist
 
 Please file a GitHub issue with the exact error you see. Also describe how you came across the error, the folders that contain the related mod (if it was related to a specific mod), and any other details you think may be helpful.
+
+---
 
 ### I want to remove State Alchemist and all mods it is using from my SD card
 
@@ -186,9 +204,13 @@ In the State Alchemist menu, choose the **Disable All Mods** option before you d
 
 After doing so, delete the `mod_alchemy` folder from the root of your SD card, along with the State Alchemist `.ovl` file from the Tesla overlays directory.
 
+---
+
 ### I want to remove State Alchemist and all mods it is using from my SD card, but I can't access the State Alchemist overlay for some reason
 
 You'll need to learn how to manually manage State Alchemist mods. Please see the **Advanced** section.
+
+---
 
 ### Can files from other mods be left in the game's title ID folder under the Atmosphere folder?
 
@@ -198,6 +220,8 @@ State Alchemist will only touch its own mod files (including those that it moved
 
 If there are any mod files you put directly within the `/atmosphere/contents/<title_id>/` folder, those mods will stay there and will not show up in State Alchemist.
 
+---
+
 ### How does State Alchemist handle conflicts between files?
 
 If State Alchemist tries to enable a mod that uses the same files as a mod that already exists within the `/atmosphere/contents/<title_id>/` folder (whether those files are managed by State Alchemist or not), those files won't be activated.
@@ -205,6 +229,8 @@ If State Alchemist tries to enable a mod that uses the same files as a mod that 
 State Alchemist will only move non-conflicting files belonging to the mod being enabled. Whatever files are currently in `/atmosphere/contents/<title_id>/` will stay there.
 
 For example, if you enable a mod with a file named `mario`, but there's already a file named `mario` in the same spot within the `/atmosphere/contents/<title_id>/` folder, the `mario` file for the mod you enabled won't be used. The other `mario` file that's already there will be used.
+
+---
 
 ### Why do I need to reboot the game every time after I change mods?
 
@@ -226,6 +252,8 @@ I think because music is "streamed" and not loaded all at once like other files,
 
 And although music seems to work, it's not an intended feature, but a side-effect. I still would recommend rebooting the game anyway, even if you only change music.
 
+---
+
 ### Where did the name State Alchemist come from?
 
 The tool was originally named Mod Alchemist, a reference to its random feature and how it is capable of "mixing" different combinations of mods to create new experiences, almost as an alchemist would mix substances.
@@ -237,6 +265,8 @@ To avoid confusion, it was decided this Tesla-based app needed a different name 
 "State Alchemist" is a humorous reference to this situation, taken from the hit anime, Fullmetal Alchemist. In episodes 11 & 12 (titled "The Other Brothers"), Ed, the real Fullmetal Alchemist encounters a conman who is claiming to be the one and only Fullmetal Alchemist to a local community. Ed must then prove his legitimacy by revealing his State Alchemist watch, proving that he is the real one, and the other is a fake.
 
 Renaming this app to "State Alchemist" is a way of claiming its authenticity as the original Mod Alchemist.
+
+---
 
 # Advanced: Managing State Alchemist Mods Manually
 
