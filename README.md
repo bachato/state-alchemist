@@ -4,7 +4,7 @@ Font by Woodcutter
 
 # Overview
 
-State Alchemist is a Nintendo Switch homebrew management app for Nintendo Switch game mods. State Alchemist runs as a Tesla-based overlay that can be shown while a game is running.
+State Alchemist is a Nintendo Switch homebrew for managing game mods. State Alchemist runs as a Tesla-based overlay that can be shown while a game is running.
 
 # Quick Start (tl;dr)
 
@@ -20,7 +20,7 @@ State Alchemist is a Nintendo Switch homebrew management app for Nintendo Switch
 
 6. Within those folders, move each mod's folder structure into its corresponding folder. The folder structure should typically begin with the `romfs` folder (which should then contain the other folders and files that comprise the mod).
 
-7. Have fun, and **make sure to reboot the game any time after changing mods**.
+7. Have fun, and **make sure to relaunch the game any time after changing mods**.
 
 8. If this **Quick Start** guide doesn't make sense, read below for more details.
 
@@ -86,7 +86,7 @@ After opening State Alchemist, you will be greeted with 3 menu options:
 
   * **A button**: Using the A button on a group will display all items belonging to that group. There are then two kinds of interaction that can be performed on each of those items:
   
-    * **A button**: Using the A button on an item belonging to a group will list all the mods belonging to that item. You can select whatever mod you want to enable it. **Make sure to reboot the game when you are done enabling or disabling mods**.
+    * **A button**: Using the A button on an item belonging to a group will list all the mods belonging to that item. You can select whatever mod you want to enable it. **Make sure to relaunch the game when you are done enabling or disabling mods**.
     
     * **X button**: Using the X button on an item belonging to a group will list all the mods belonging to that item as well, but it will instead show you sliders that you can use to change the likelihood of the random feature picking that specific mod. The further left the slider is, the less likely it will be enabled at random. The further right, the more likely.
     
@@ -96,9 +96,9 @@ After opening State Alchemist, you will be greeted with 3 menu options:
   
   * All items listed from each group correspond to the folders created in step 6 of the installation instructions.
   
-* **Pick at Random**: Changes all mods at random. **Make sure to reboot the game when the random feature finishes**. Also **avoid using this feature at any point when the game may be loading**.
+* **Pick at Random**: Changes all mods at random. **Make sure to relaunch the game when the random feature finishes**. Also **avoid using this feature at any point when the game may be loading**.
 
-* **Disable All Mods**: Turns off all mods that are currently enabled. **Make sure to reboot the game when it finishes**. Also **avoid using this feature at any point when the game may be loading**.
+* **Disable All Mods**: Turns off all mods that are currently enabled. **Make sure to relaunch the game when it finishes**. Also **avoid using this feature at any point when the game may be loading**.
 
 # Help / FAQs
 
@@ -120,7 +120,7 @@ Make sure you named the folder you created in step 4 in the **Installation Instr
 
 ### After enabling a mod, I don't notice it in the game.
 
-Make sure to reboot the game after enabling it.
+Make sure to relaunch the game after enabling it.
 
 If you did, disable the mod in State Alchemist. Then in a file explorer, go to that mod's folder in the `mod_alchemy/<title_id>/<group_name>/<thing_being_modded>/` folder to inspect its folders and files.
 
@@ -130,7 +130,7 @@ Make sure the folders and files are all named correctly. The folder directly in 
 
 ### After changing or disabling a mod, the game crashes the moment the mod would normally be loaded, but I know the mod should work fine.
 
-Make sure to reboot the game after enabling it.
+Make sure to relaunch the game after enabling it.
 
 ---
 
@@ -232,7 +232,7 @@ For example, if you enable a mod with a file named `mario`, but there's already 
 
 ---
 
-### Why do I need to reboot the game every time after I change mods?
+### Why do I need to relaunch the game every time after I change mods?
 
 When the game is launched, all the mods currently enabled (aka, located in `/atmosphere/contents/<title_id>/`) have their file locations tracked in memory so that the game will load those files when it needs to.
 
@@ -242,15 +242,15 @@ In other words, the moment you enable a mod in State Alchemist, the game will no
 
 The moment you disable a mod in State Alchemist, the game will not know that mod was disabled. It will try to find the mod's files, and when it can't, it will crash the game.
 
-The game must be rebooted for those tracked locations to be updated.
+The game must be relaunched for those tracked locations to be updated.
 
 This behavior is related to how the Layeredfs technology in Atmosphere loads mods (not State Alchemist itself), so it's not something that can be easily changed.
 
 There is one exception that I've noticed: music
 
-I think because music is "streamed" and not loaded all at once like other files, it actually does not seem to require the game to be rebooted for the music to be changed (at least, not in my experience). But the music can get heavily distorted if the track is changed while it is playing though.
+I think because music is "streamed" and not loaded all at once like other files, it actually does not seem to require the game to be relaunched for the music to be changed (at least, not in my experience). But the music can get heavily distorted if the track is changed while it is playing though.
 
-And although music seems to work, it's not an intended feature, but a side-effect. I still would recommend rebooting the game anyway, even if you only change music.
+And although music seems to work, it's not an intended feature, but a side-effect. I still would recommend relaunching the game anyway, even if you only change music.
 
 ---
 

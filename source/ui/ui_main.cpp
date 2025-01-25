@@ -9,7 +9,7 @@
 GuiMain::GuiMain() { }
 
 tsl::elm::Element* GuiMain::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 0.1.0");
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 0.5");
 
   auto list = new tsl::elm::List();
 

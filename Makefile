@@ -38,7 +38,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
 APP_TITLE	:=	State Alchemist
-APP_VERSION :=	0.1.0
+APP_VERSION :=	0.5.0
 
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build

@@ -5,7 +5,7 @@
 GuiAllDisabled::GuiAllDisabled() {}
 
 tsl::elm::Element* GuiAllDisabled::createUI() {
-  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 0.1.0");
+  auto frame = new tsl::elm::OverlayFrame("State Alchemist", "Version 0.5");
   this->items = new tsl::elm::List();
 
   this->items->addItem(new tsl::elm::CategoryHeader("Disable all active mods?"));
