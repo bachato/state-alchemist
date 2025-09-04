@@ -1,3 +1,17 @@
+### ⚠️ DEPRECATED ⚠️
+
+State Alchemist has been archived and will no longer be supported in any way.
+
+It was decided that the tool is too dangerous for the general public to use. It can easily fall into a fatally broken state if a game tries to load a mod file immediately after it changes. Such an action would cause the app to continue to crash at times until a backup is restored. It is very easy to fall into this problem by accident, so users shouldn't be expected to have to blindly guess when is a good time to change mods in a game to avoid an issue so devastating.
+
+This critical issue cannot be fixed by any possible code change in State Alchemist as it is related to the core underlying behavior of Atmosphere's LayeredFS.
+
+Instead, it's recommended to use [Simple Mod Alchemist](https://github.com/gtiersma/Simple_Mod_Alchemist) instead. Simple Mod Alchemist is a homebrew app instead of a Tesla overlay, so it won't have this issue. It should be easier to use too.
+
+If you already have mods that are set up for State Alchemist, Simple Mod Alchemist will load them automatically, so there will be no need for any reorganization.
+
+The State Alchemist release has been taken down, but the source code will be left up. Anyone that's code-savvy can still build the overlay from source if someone still really wants to use it despite its dangers.
+
 ![StateAlchemist](title.png)
 
 Font by Woodcutter
